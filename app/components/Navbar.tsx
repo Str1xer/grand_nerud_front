@@ -1,0 +1,49 @@
+'use client'
+
+import Link from 'next/link'
+import { useAuth } from '@/app/context/AuthContext'
+
+export const Navbar = () => {
+  const { user, logout, isAdmin } = useAuth()
+
+  return (
+    <nav className="bg-gray-800 text-white p-4">
+      <div className="container mx-auto flex justify-between items-center">
+        <Link href="/" className="text-xl font-bold">
+          AutoGroup CRM
+        </Link>
+        
+        <div className="flex items-center space-x-4">
+          {user ? (
+            <>
+              <Link href="/deals" className="hover:text-gray-300">
+                Мои сделки
+              </Link>
+              {isAdmin && (
+                <Link href="/admin" className="hover:text-gray-300">
+                  Админ-панель
+                </Link>
+              )}
+              <button 
+                onClick={logout}
+                className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded"
+              >
+                Выйти
+              </button>
+              <span className="text-gray-300">{user.email}</span>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="hover:text-gray-300">
+                Вход
+              </Link>
+              <Link href="/register" className="hover:text-gray-300">
+                Регистрация
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
+    </nav>
+  )
+}
