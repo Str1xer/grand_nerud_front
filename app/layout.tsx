@@ -7,7 +7,7 @@ import { Navbar } from '@/app/components/Navbar'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'AutoGroup CRM',
+  title: 'Гранд-неруд CRM',
   description: 'Панель управления сделками',
 }
 

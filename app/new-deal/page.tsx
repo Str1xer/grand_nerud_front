@@ -14,25 +14,30 @@ export default function NewDealPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  const getCookie = (name: string) => {
+    return document.cookie.split('; ').find(row => row.startsWith(`${name}=`))?.split('=')[1]
+  }
+
   useEffect(() => {
     if (!user) return
 
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem('token')
-        
+        const token = getCookie('tg_news_bot_access_token');
+        // const token = localStorage.getItem('token')
+
         const [servicesRes, stagesRes, materialsRes, companiesRes] = await Promise.all([
           fetch('https://appgrand.worldautogroup.ru/services', {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { ...(token && { 'x-user-id': token }), }
           }),
           fetch('https://appgrand.worldautogroup.ru/stages', {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { ...(token && { 'x-user-id': token }), }
           }),
           fetch('https://appgrand.worldautogroup.ru/materials', {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { ...(token && { 'x-user-id': token }), }
           }),
           fetch('https://appgrand.worldautogroup.ru/companies', {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { ...(token && { 'x-user-id': token }), }
           })
         ])
 
@@ -79,9 +84,9 @@ export default function NewDealPage() {
 
   return (
     <div className="py-8">
-      <DealForm 
-        services={services} 
-        stages={stages} 
+      <DealForm
+        services={services}
+        stages={stages}
         materials={materials}
         companies={companies}
       />

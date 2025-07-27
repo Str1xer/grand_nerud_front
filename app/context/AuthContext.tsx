@@ -1,114 +1,199 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { User } from '@/lib/types'
+import { useRouter } from 'next/navigation'
+
+// Утилита для работы с куками
+const setCookie = (name: string, value: string) => {
+  const domain = process.env.NODE_ENV === 'development'
+    ? 'localhost'
+    : '.worldautogroup.ru';
+
+  document.cookie = `${name}=${value}; path=/; domain=${domain}; ${process.env.NODE_ENV === 'production' ? 'Secure; SameSite=None' : 'SameSite=Lax'
+    }`;
+}
+
+const getCookie = (name: string) => {
+  return document.cookie.split('; ').find(row => row.startsWith(`${name}=`))?.split('=')[1]
+}
+
+const removeCookie = (name: string) => {
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
+}
+
+interface User {
+  _id: string
+  email: string
+  admin: boolean | null
+}
 
 interface AuthContextType {
-    user: User | null
-    login: (email: string, password: string) => Promise<void>
-    register: (email: string, password: string) => Promise<void>
-    logout: () => Promise<void>
-    loading: boolean
-    isAdmin: boolean
+  user: User | null
+  login: (email: string, password: string) => Promise<void>
+  logout: () => Promise<void>
+  loading: boolean
+  isAdmin: boolean
+  error: string | null
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [isAdmin, setIsAdmin] = useState(false)
+  const [state, setState] = useState<{
+    user: User | null
+    loading: boolean
+    isAdmin: boolean
+    error: string | null
+  }>({
+    user: null,
+    loading: true,
+    isAdmin: false,
+    error: null
+  })
 
-    useEffect(() => {
-        const checkAuth = async () => {
-            try {
-                const token = localStorage.getItem('token')
-                if (token) {
-                    const response = await fetch('https://appgrand.worldautogroup.ru/auth/me', {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    })
-                    if (response.ok) {
-                        const userData = await response.json()
-                        setUser(userData)
-                        setIsAdmin(userData.role === 'admin') // Предполагаем, что в ответе есть поле role
-                    }
-                }
-            } catch (error) {
-                console.error('Auth check failed:', error)
-            } finally {
-                setLoading(false)
-            }
-        }
+  const router = useRouter()
 
-        checkAuth()
-    }, [])
+  const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
+    const token = getCookie('tg_news_bot_access_token');
 
-    const login = async (email: string, password: string) => {
-        const response = await fetch('https://appgrand.worldautogroup.ru/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-        })
+    const headers = {
+      'Content-Type': 'application/json',
+      // ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...(token && { 'x-user-id': token }),
+      ...options.headers
+    };
 
-        if (!response.ok) {
-            throw new Error('Login failed')
-        }
+    try {
+      const response = await fetch(`https://appgrand.worldautogroup.ru${endpoint}`, {
+        ...options,
+        headers,
+        credentials: 'include',
+        mode: 'cors' // Явно указываем режим CORS
+      });
 
-        const data = await response.json()
-        localStorage.setItem('token', data.token)
-        setUser(data.user)
-        setIsAdmin(data.user.role === 'admin')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.detail || `HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`Fetch error for ${endpoint}:`, error);
+      throw error instanceof Error ? error : new Error('Network request failed');
     }
+  };
 
-    const register = async (email: string, password: string) => {
-        const response = await fetch('https://appgrand.worldautogroup.ru/auth/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-        })
+  // Добавьте этот метод для обработки OPTIONS-запросов
+  const handlePreflight = async (endpoint: string) => {
+    await fetch(`https://appgrand.worldautogroup.ru${endpoint}`, {
+      method: 'OPTIONS',
+      headers: {
+        'Access-Control-Request-Method': 'GET',
+        'Access-Control-Request-Headers': 'Content-Type,Authorization',
+        'Origin': window.location.origin
+      }
+    });
+  };
 
-        if (!response.ok) {
-            throw new Error('Registration failed')
-        }
+  const checkAuth = async () => {
+    try {
+      setState(prev => ({ ...prev, loading: true, error: null }));
 
-        const data = await response.json()
-        localStorage.setItem('token', data.token)
-        setUser(data.user)
-        setIsAdmin(false)
+      // Сначала обрабатываем preflight
+      await handlePreflight('/auth/me');
+
+      // Затем основной запрос
+      const userData = await fetchWithAuth('/auth/me');
+      setState({
+        user: userData,
+        isAdmin: userData?.admin === true,
+        loading: false,
+        error: null
+      });
+    } catch (error) {
+      setState({
+        user: null,
+        isAdmin: false,
+        loading: false,
+        error: error instanceof Error ? error.message : 'Auth check failed'
+      });
     }
+  };
 
-    const logout = async () => {
-        const token = localStorage.getItem('token')
-        if (token) {
-            await fetch('https://appgrand.worldautogroup.ru/auth/logout', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            })
-        }
-        localStorage.removeItem('token')
-        setUser(null)
-        setIsAdmin(false)
+  const login = async (email: string, password: string) => {
+    try {
+      setState(prev => ({ ...prev, loading: true, error: null }))
+
+      const response = await fetch('https://appgrand.worldautogroup.ru/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData?.detail || 'Login failed')
+      }
+
+      const { access_token } = await response.json()
+
+      // Сохраняем токен в куки
+      setCookie('tg_news_bot_access_token', access_token)
+
+      // Проверяем что кука установилась
+      if (!getCookie('tg_news_bot_access_token')) {
+        throw new Error('Failed to set auth cookie')
+      }
+
+      await checkAuth()
+      router.push('/deals')
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: error instanceof Error ? error.message : 'Login failed'
+      }))
+      throw error
     }
+  }
 
-    return (
-        <AuthContext.Provider value={{ user, login, register, logout, loading, isAdmin }}>
-            {children}
-        </AuthContext.Provider>
-    )
+  const logout = async () => {
+    try {
+      await fetchWithAuth('/auth/logout', { method: 'POST' })
+    } finally {
+      removeCookie('tg_news_bot_access_token')
+      setState({
+        user: null,
+        isAdmin: false,
+        loading: false,
+        error: null
+      })
+      router.push('/login')
+    }
+  }
+
+  useEffect(() => {
+    checkAuth()
+  }, [])
+
+  return (
+    <AuthContext.Provider value={{
+      user: state.user,
+      login,
+      logout,
+      loading: state.loading,
+      isAdmin: state.isAdmin,
+      error: state.error
+    }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export const useAuth = () => {
-    const context = useContext(AuthContext)
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider')
-    }
-    return context
+  const context = useContext(AuthContext)
+  if (!context) throw new Error('useAuth must be used within an AuthProvider')
+  return context
 }
