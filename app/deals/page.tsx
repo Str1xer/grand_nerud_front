@@ -96,7 +96,7 @@ export default function DealsPage() {
           {isAdmin ? 'Все сделки' : 'Мои сделки'}
         </h1>
         <Link
-          href="/new-deal"
+          href="deals/new-deal"
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
         >
           Новая сделка
@@ -105,39 +105,86 @@ export default function DealsPage() {
 
       {/* Фильтры в одну строку */}
       <div className="flex flex-wrap gap-4 mb-6">
-        <select
-          value={stageFilter}
-          onChange={(e) => setStageFilter(e.target.value)}
-          className="border px-3 py-2 rounded min-w-[200px]"
-        >
-          <option value="">Все стадии</option>
-          {[...new Set(deals.map((d) => d.stage?.name).filter(Boolean))].map((stage) => (
-            <option key={stage} value={stage}>{stage}</option>
-          ))}
-        </select>
+        <div className="relative w-full max-w-xs">
+          <select
+            value={stageFilter}
+            onChange={(e) => setStageFilter(e.target.value)}
+            className="block w-full appearance-none rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="">Все стадии</option>
+            {[...new Set(deals.map((d) => d.stage?.name).filter(Boolean))].map((stage) => (
+              <option key={stage} value={stage}>{stage}</option>
+            ))}
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+            <svg
+              className="h-4 w-4 text-gray-400"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.02-1.06z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+        </div>
 
-        <select
-          value={serviceFilter}
-          onChange={(e) => setServiceFilter(e.target.value)}
-          className="border px-3 py-2 rounded min-w-[200px]"
-        >
-          <option value="">Все услуги</option>
-          {[...new Set(deals.map((d) => d.service?.name).filter(Boolean))].map((service) => (
-            <option key={service} value={service}>{service}</option>
-          ))}
-        </select>
+        <div className="relative w-full max-w-xs">
+          <select
+            value={serviceFilter}
+            onChange={(e) => setServiceFilter(e.target.value)}
+            className="block w-full appearance-none rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="">Все услуги</option>
+            {[...new Set(deals.map((d) => d.service?.name).filter(Boolean))].map((service) => (
+              <option key={service} value={service}>{service}</option>
+            ))}
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+            <svg
+              className="h-4 w-4 text-gray-400"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.02-1.06z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+        </div>
 
-        <select
-          value={userFilter}
-          onChange={(e) => setUserFilter(e.target.value)}
-          // className="border px-3 py-2 rounded min-w-[200px]"
-          className="py-3 px-4 pe-9 min-w-[200px] block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
-        >
-          <option value="">Все менеджеры</option>
-          {[...new Set(deals.map((d) => d.user?.name).filter(Boolean))].map((userName) => (
-            <option key={userName} value={userName}>{userName}</option>
-          ))}
-        </select>
+        <div className="relative w-full max-w-xs">
+          <select
+            value={userFilter}
+            onChange={(e) => setUserFilter(e.target.value)}
+            className="block w-full appearance-none rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="">Все менеджеры</option>
+            {[...new Set(deals.map((d) => d.user?.name).filter(Boolean))].map((userName) => (
+              <option key={userName} value={userName}>{userName}</option>
+            ))}
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+            <svg
+              className="h-4 w-4 text-gray-400"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.02-1.06z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+        </div>
       </div>
 
       {/* Таблица сделок */}

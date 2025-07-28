@@ -109,7 +109,7 @@ export default function Home() {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Быстрые действия</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Link
-                href="/new-deal"
+                href="deals/new-deal"
                 className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <h3 className="font-medium text-gray-900 mb-2">Создать сделку</h3>

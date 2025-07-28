@@ -12,50 +12,316 @@ interface DealFormProps {
   companies: Company[]
 }
 
-export const DealForm = ({ initialData, services, stages, materials, companies }: DealFormProps) => {
+interface FieldConfig {
+  name: keyof Deal | string
+  label: string
+  type: 'text' | 'number' | 'select' | 'checkbox' | 'textarea' | 'datetime-local'
+  options?: { label: string; value: string }[]
+  step?: string
+  min?: number
+  placeholder?: string
+  readonly?: boolean
+  required?: boolean
+  group: string
+  visibleIf?: (formData: Partial<Deal>) => boolean
+}
+
+// Конфиг всех полей в одном массиве
+const allFieldsConfig: FieldConfig[] = [
+  // Общие поля в разные группы
+  {
+    name: 'serviceId',
+    label: 'Услуга *',
+    type: 'select',
+    required: true,
+    group: 'Основная информация',
+  },
+  {
+    name: 'customerId',
+    label: 'Заказчик *',
+    type: 'select',
+    required: true,
+    group: 'Основная информация',
+    visibleIf: (formData) => formData.serviceId && formData.serviceIdName != '',
+  },
+  // {
+  //   name: 'stageId',
+  //   label: 'Этап сделки *',
+  //   type: 'select',
+  //   required: true,
+  //   group: 'Основная информация',
+  // },
+  {
+    name: 'materialId',
+    label: 'Материал',
+    type: 'select',
+    group: 'Основная информация',
+    visibleIf: (formData) => formData.serviceId && formData.serviceIdName != '',
+  },
+  {
+    name: 'unitMeasurement',
+    label: 'Единица измерения',
+    type: 'select',
+    options: [
+      { label: 'Кубический метр', value: 'Кубический метр' },
+      { label: 'Тонна', value: 'Тонна' },
+    ],
+    group: 'Основная информация',
+    visibleIf: (formData) => formData.serviceId && formData.serviceIdName != '',
+  },
+  {
+    name: 'quantity',
+    label: 'Количество',
+    type: 'number',
+    step: '0.01',
+    min: 0,
+    group: 'Основная информация',
+    visibleIf: (formData) => formData.serviceId && formData.serviceIdName != '',
+  },
+
+  // Финансовая информация
+  {
+    name: 'paymentMethod',
+    label: 'Тип расчета',
+    type: 'select',
+    options: [
+      { label: 'Наличные', value: 'cash' },
+      { label: 'Безналичный', value: 'cashless' },
+    ],
+    group: 'Финансовая информация',
+    visibleIf: (formData) => formData.serviceId && formData.serviceIdName != '',
+  },
+  {
+    name: 'companyProfit',
+    label: 'Надбавка фирмы',
+    type: 'number',
+    step: '0.01',
+    min: 0,
+    group: 'Финансовая информация',
+    visibleIf: (formData) => formData.serviceId && formData.serviceIdName != '',
+  },
+  {
+    name: 'managerProfit',
+    label: 'Доход менеджера',
+    type: 'number',
+    step: '0.01',
+    min: 0,
+    group: 'Финансовая информация',
+    visibleIf: (formData) => formData.serviceId && formData.serviceIdName != '',
+  },
+  {
+    name: 'totalAmount',
+    label: 'Итоговая сумма',
+    type: 'number',
+    readonly: true,
+    group: 'Финансовая информация',
+    visibleIf: (formData) => formData.serviceId && formData.serviceIdName != '',
+  },
+
+  // Доставка
+  {
+    name: 'methodReceiving',
+    label: 'Способ получения товара',
+    type: 'select',
+    options: [
+      { label: 'Доставка', value: 'delivery' },
+      { label: 'Самовывоз', value: 'pickup' },
+    ],
+    group: 'Доставка',
+    visibleIf: (formData) => formData.serviceId && formData.serviceIdName === 'продажа сырья',
+  },
+  {
+    name: 'amountDelivery',
+    label: 'Сумма логистики',
+    type: 'number',
+    step: '0.01',
+    min: 0,
+    group: 'Доставка',
+    visibleIf: (formData) => formData.methodReceiving === 'delivery',
+  },
+  {
+    name: 'shippingAddress',
+    label: 'Адрес отгрузки',
+    type: 'textarea',
+    group: 'Доставка',
+    visibleIf: (formData) => formData.serviceId && formData.serviceIdName != '',
+  },
+  {
+    name: 'deliveryAddress',
+    label: 'Адрес доставки',
+    type: 'textarea',
+    group: 'Доставка',
+    visibleIf: (formData) => formData.methodReceiving === 'delivery',
+  },
+
+  // Дополнительно
+  {
+    name: 'deadline',
+    label: 'Срок выполнения',
+    type: 'datetime-local',
+    group: 'Дополнительно',
+    visibleIf: (formData) => formData.serviceId && formData.serviceIdName != '',
+  },
+  {
+    name: 'notes',
+    label: 'Примечания',
+    type: 'textarea',
+    group: 'Дополнительно',
+    visibleIf: (formData) => formData.serviceId && formData.serviceIdName != '',
+  },
+
+  // Специфичные поля по услуге "продажа сырья"
+  {
+    name: 'amountPerUnit',
+    label: 'Цена за единицу',
+    type: 'number',
+    step: '0.01',
+    min: 0,
+    group: 'Дополнительно',
+    visibleIf: (formData) => {
+      // Найдем выбранную услугу по ID, сравним название
+      return formData.serviceId && formData.serviceIdName === 'продажа сырья'
+    },
+  },
+  {
+    name: 'amountPurchase',
+    label: 'Сумма закупки',
+    type: 'number',
+    step: '0.01',
+    min: 0,
+    group: 'Дополнительно',
+    visibleIf: (formData) => formData.serviceId && formData.serviceIdName === 'продажа сырья',
+  },
+
+  // Специфичные поля для утилизации
+  {
+    name: 'OSSIG',
+    label: 'ОССиГ',
+    type: 'checkbox',
+    group: 'Доставка',
+    visibleIf: (formData) => formData.serviceIdName === 'утилизация',
+  },
+]
+
+const Section = ({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) => (
+  <div className="mb-8">
+    <h3 className="text-lg font-semibold mb-4 border-b border-gray-300 pb-1 text-gray-800">
+      {title}
+    </h3>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{children}</div>
+  </div>
+)
+
+export const DealForm = ({
+  initialData,
+  services,
+  stages,
+  materials,
+  companies,
+}: DealFormProps) => {
   const router = useRouter()
-  const [formData, setFormData] = useState<Partial<Deal>>(initialData || {
-    serviceId: '',
-    customerId: '',
-    stageId: '',
-    materialId: '',
-    unitMeasurement: '',
-    quantity: 0,
-    methodReceiving: '',
-    paymentMethod: '',
-    shippingAddress: '',
-    deliveryAddress: '',
-    amountPurchase: 0,
-    amountDelivery: 0,
-    companyProfit: 0,
-    totalAmount: 0,
-    managerProfit: 0,
-    deadline: '',
-    notes: '',
-    OSSIG: false,
-  })
+  const [formData, setFormData] = useState<Partial<Deal & { serviceIdName?: string }>>(
+    initialData
+      ? {
+        ...initialData,
+        serviceIdName: '',
+      }
+      : {
+        serviceId: '',
+        customerId: '',
+        stageId: '',
+        materialId: '',
+        unitMeasurement: '',
+        quantity: 0,
+        methodReceiving: '',
+        paymentMethod: '',
+        shippingAddress: '',
+        deliveryAddress: '',
+        amountPurchase: 0,
+        amountDelivery: 0,
+        companyProfit: 0,
+        totalAmount: 0,
+        managerProfit: 0,
+        deadline: '',
+        notes: '',
+        OSSIG: false,
+        serviceIdName: '',
+      }
+  )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [serviceSelected, setServiceSelected] = useState(false)
 
-  const getCookie = (name: string) => {
-    return document.cookie.split('; ').find(row => row.startsWith(`${name}=`))?.split('=')[1]
-  }
+  const floatFieldNames = [
+    'amountPurchase',
+    'amountDelivery',
+    'companyProfit',
+    'totalAmount',
+    'managerProfit',
+    'quantity',
+    'amountPerUnit',
+  ]
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const getCookie = (name: string) =>
+    document.cookie
+      .split('; ')
+      .find((row) => row.startsWith(`${name}=`))
+      ?.split('=')[1]
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value, type } = e.target as HTMLInputElement
     const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined
 
-    if (name === 'serviceId') {
-      setServiceSelected(!!value)
+    if (type === 'number' || floatFieldNames.includes(name)) {
+      const valid = /^-?\d*\.?\d*$/.test(value)
+      if (!valid && value !== '') return
     }
 
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked
-        : type === 'number' ? parseFloat(value) || 0
-          : value
-    }))
+    let valToSet: any = type === 'checkbox' ? checked : value
+
+    setFormData((prev) => {
+      // Если меняется serviceId, дописываем имя услуги для удобства visibleIf
+      if (name === 'serviceId') {
+        const foundService = services.find((s) => s._id === valToSet)
+        return {
+          ...prev,
+          [name]: valToSet,
+          serviceIdName: foundService?.name || '',
+        }
+      }
+      return {
+        ...prev,
+        [name]: valToSet,
+      }
+    })
+  }
+
+  const handleFloatKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const allowedKeys = [
+      'Backspace',
+      'Delete',
+      'ArrowLeft',
+      'ArrowRight',
+      'Tab',
+      'Enter',
+      'Home',
+      'End',
+      '-',
+      '.',
+    ]
+    if (!allowedKeys.includes(e.key) && !(e.key >= '0' && e.key <= '9')) e.preventDefault()
+  }
+
+  const handlePasteFloatOnly = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const paste = e.clipboardData.getData('text')
+    if (!/^[-]?\d*\.?\d*$/.test(paste)) e.preventDefault()
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,14 +330,13 @@ export const DealForm = ({ initialData, services, stages, materials, companies }
     setError('')
 
     try {
-      const token = getCookie('tg_news_bot_access_token');
+      const token = getCookie('tg_news_bot_access_token')
       const url = initialData
         ? `https://appgrand.worldautogroup.ru/deals/${initialData._id}`
         : 'https://appgrand.worldautogroup.ru/deals'
 
       const method = initialData ? 'PATCH' : 'POST'
 
-      // Преобразуем все числовые поля в обычные числа (не Decimal)
       const dataToSend = {
         ...formData,
         amountPurchase: Number(formData.amountPurchase),
@@ -80,14 +345,11 @@ export const DealForm = ({ initialData, services, stages, materials, companies }
         totalAmount: Number(formData.totalAmount),
         managerProfit: Number(formData.managerProfit),
         quantity: Number(formData.quantity),
-        deadline: formData.deadline ? new Date(formData.deadline).toISOString() : null
+        deadline: formData.deadline ? new Date(formData.deadline).toISOString() : null,
       }
 
-      // Удаляем undefined/null поля
-      Object.keys(dataToSend).forEach(key => {
-        if (dataToSend[key] === undefined || dataToSend[key] === null) {
-          delete dataToSend[key]
-        }
+      Object.keys(dataToSend).forEach((key) => {
+        if (dataToSend[key] === undefined || dataToSend[key] === null) delete dataToSend[key]
       })
 
       const response = await fetch(url, {
@@ -96,351 +358,195 @@ export const DealForm = ({ initialData, services, stages, materials, companies }
           'Content-Type': 'application/json',
           ...(token && { 'x-user-id': token }),
         },
-        body: JSON.stringify(dataToSend)
+        body: JSON.stringify(dataToSend),
       })
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || (initialData ? 'Failed to update deal' : 'Failed to create deal'))
+        throw new Error(errorData.message || 'Ошибка сохранения сделки')
       }
 
       router.push('/deals')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      setError(err instanceof Error ? err.message : 'Произошла ошибка')
     } finally {
       setLoading(false)
     }
   }
 
   const calculateTotal = () => {
-    const purchase = formData.amountPurchase || 0
-    const delivery = formData.amountDelivery || 0
-    const profit = formData.companyProfit || 0
+    const purchase = Number(formData.amountPurchase) || 0
+    const delivery = Number(formData.amountDelivery) || 0
+    const profit = Number(formData.companyProfit) || 0
     return purchase + delivery + profit
   }
 
   useEffect(() => {
-    if (formData.amountPurchase !== undefined ||
+    if (
+      formData.amountPurchase !== undefined ||
       formData.amountDelivery !== undefined ||
-      formData.companyProfit !== undefined) {
-      setFormData(prev => ({
+      formData.companyProfit !== undefined
+    ) {
+      setFormData((prev) => ({
         ...prev,
-        totalAmount: calculateTotal()
+        totalAmount: calculateTotal(),
       }))
     }
   }, [formData.amountPurchase, formData.amountDelivery, formData.companyProfit])
 
-  const renderServiceSpecificFields = () => {
-    if (!formData.serviceId) return null
+  // Группируем поля по группе
+  const groupedFields = allFieldsConfig.reduce<Record<string, FieldConfig[]>>((acc, field) => {
+    if (!acc[field.group]) acc[field.group] = []
+    acc[field.group].push(field)
+    return acc
+  }, {})
 
-    const service = services.find(s => s._id === formData.serviceId)
-    if (!service) return null
+  const renderFields = (fields: FieldConfig[]) => {
+    return fields.map((field) => {
+      // Проверяем видимость
+      if (field.visibleIf && !field.visibleIf(formData)) return null
 
-    switch (service.name) {
-      case 'продажа сырья':
-        return (
-          <>
-            <div>
+      const value =
+        formData[field.name as keyof Deal] ??
+        (field.type === 'checkbox' ? false : '')
+
+      const commonProps = {
+        name: field.name,
+        value: field.type === 'checkbox' ? undefined : value,
+        checked: field.type === 'checkbox' ? Boolean(value) : undefined,
+        onChange: handleChange,
+        className: field.type === 'checkbox'
+          ? 'sr-only peer'
+          : 'w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500',
+        placeholder: field.placeholder,
+        readOnly: field.readonly,
+        min: field.min,
+        step: field.step,
+        required: field.required,
+      }
+
+      switch (field.type) {
+        case 'text':
+          return (
+            <div key={field.name}>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Цена за единицу
+                {field.label}
+              </label>
+              <input type="text" {...commonProps} />
+            </div>
+          )
+        case 'number':
+          return (
+            <div key={field.name}>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {field.label}
               </label>
               <input
                 type="number"
-                name="amountPerUnit"
-                value={formData.amountPerUnit || ''}
-                onChange={handleChange}
-                min="0"
-                step="0.01"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                {...commonProps}
+                onKeyDown={handleFloatKeyDown}
+                onPaste={handlePasteFloatOnly}
               />
             </div>
-            <div>
+          )
+        case 'select':
+          if (
+            ['customerId', 'stageId', 'materialId', 'serviceId'].includes(
+              field.name
+            )
+          ) {
+            let optionsList: { label: string; value: string }[] = []
+
+            if (field.name === 'customerId') {
+              optionsList = companies
+                .filter((c) => !c.is_deleted)
+                .map((c) => ({ label: c.name, value: c._id }))
+            } else if (field.name === 'stageId') {
+              optionsList = stages
+                .filter((s) => !s.is_deleted)
+                .map((s) => ({ label: s.name, value: s._id }))
+            } else if (field.name === 'materialId') {
+              optionsList = materials
+                .filter((m) => !m.is_deleted)
+                .map((m) => ({ label: m.name, value: m._id }))
+            } else if (field.name === 'serviceId') {
+              optionsList = services.map((s) => ({
+                label: s.name,
+                value: s._id,
+              }))
+            }
+
+            return (
+              <div key={field.name}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {field.label}
+                </label>
+                <select {...commonProps}>
+                  <option value="">Выберите</option>
+                  {optionsList.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )
+          }
+
+          return (
+            <div key={field.name}>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Способ получения товара
+                {field.label}
               </label>
-              <select
-                name="methodReceiving"
-                value={formData.methodReceiving || ''}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">Выберите способ</option>
-                <option value="delivery">Доставка</option>
-                <option value="pickup">Самовывоз</option>
+              <select {...commonProps}>
+                <option value="">Выберите</option>
+                {field.options?.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Сумма закупки за весь объем
+          )
+        case 'checkbox':
+          return (
+
+            <div key={field.name} className="flex items-center space-x-3">
+              <label className="inline-flex items-center cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  {...commonProps}
+                  className="sr-only peer"
+                />
+                <div className="w-10 h-5 bg-gray-300 rounded-full peer-checked:bg-blue-600 relative transition-colors duration-200 ease-in-out">
+                  <span className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transform transition-transform duration-200 ease-in-out peer-checked:translate-x-5"></span>
+                </div>
               </label>
-              <input
-                type="number"
-                name="amountPurchase"
-                value={formData.amountPurchase || ''}
-                onChange={handleChange}
-                min="0"
-                step="0.01"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              />
+              <span className="text-sm text-gray-700">{field.label}</span>
             </div>
-          </>
-        )
-      case 'доставка':
-        return (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Сумма логистики
-            </label>
-            <input
-              type="number"
-              name="amountDelivery"
-              value={formData.amountDelivery || ''}
-              onChange={handleChange}
-              min="0"
-              step="0.01"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-        )
-      case 'утилизация':
-        return (
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              name="OSSIG"
-              checked={formData.OSSIG || false}
-              onChange={handleChange}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label className="ml-2 block text-sm text-gray-700">
-              ОССиГ
-            </label>
-          </div>
-        )
-      default:
-        return null
-    }
-  }
-
-  const renderCommonFields = () => {
-    if (!serviceSelected) return null
-
-    return (
-      <>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Дата создания сделки *
-          </label>
-          <input
-            type="datetime-local"
-            name="createdAt"
-            value={formData.createdAt || ''}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Заказчик *
-          </label>
-          <select
-            name="customerId"
-            value={formData.customerId || ''}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">Выберите заказчика</option>
-            {companies.filter(c => !c.is_deleted).map(company => (
-              <option key={company._id} value={company._id}>
-                {company.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Этап сделки *
-          </label>
-          <select
-            name="stageId"
-            value={formData.stageId || ''}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">Выберите этап</option>
-            {stages.filter(s => !s.is_deleted).map(stage => (
-              <option key={stage._id} value={stage._id}>
-                {stage.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Материал
-          </label>
-          <select
-            name="materialId"
-            value={formData.materialId || ''}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">Выберите материал</option>
-            {materials.filter(m => !m.is_deleted).map(material => (
-              <option key={material._id} value={material._id}>
-                {material.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Единица измерения
-          </label>
-          <input
-            type="text"
-            name="unitMeasurement"
-            value={formData.unitMeasurement || ''}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Количество
-          </label>
-          <input
-            type="number"
-            name="quantity"
-            value={formData.quantity || ''}
-            onChange={handleChange}
-            min="0"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Тип расчета
-          </label>
-          <select
-            name="paymentMethod"
-            value={formData.paymentMethod || ''}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">Выберите способ</option>
-            <option value="cash">Наличные</option>
-            <option value="cashless">Безналичный</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Адрес отправления
-          </label>
-          <input
-            type="text"
-            name="shippingAddress"
-            value={formData.shippingAddress || ''}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Адрес доставки
-          </label>
-          <input
-            type="text"
-            name="deliveryAddress"
-            value={formData.deliveryAddress || ''}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Надбавка фирмы
-          </label>
-          <input
-            type="number"
-            name="companyProfit"
-            value={formData.companyProfit || ''}
-            onChange={handleChange}
-            min="0"
-            step="0.01"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Итоговая сумма
-          </label>
-          <input
-            type="number"
-            name="totalAmount"
-            value={formData.totalAmount || ''}
-            readOnly
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Доход менеджера
-          </label>
-          <input
-            type="number"
-            name="managerProfit"
-            value={formData.managerProfit || ''}
-            onChange={handleChange}
-            min="0"
-            step="0.01"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Дедлайн
-          </label>
-          <input
-            type="datetime-local"
-            name="deadline"
-            value={formData.deadline || ''}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Примечания
-          </label>
-          <textarea
-            name="notes"
-            value={formData.notes || ''}
-            onChange={handleChange}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        {renderServiceSpecificFields()}
-      </>
-    )
+          )
+        case 'textarea':
+          return (
+            <div key={field.name}>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {field.label}
+              </label>
+              <textarea {...commonProps} rows={3} />
+            </div>
+          )
+        case 'datetime-local':
+          return (
+            <div key={field.name}>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {field.label}
+              </label>
+              <input type="datetime-local" {...commonProps} />
+            </div>
+          )
+        default:
+          return null
+      }
+    })
   }
 
   return (
@@ -450,35 +556,23 @@ export const DealForm = ({ initialData, services, stages, materials, companies }
       </h2>
 
       {error && (
-        <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
-          {error}
-        </div>
+        <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">{error}</div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Услуга *
-            </label>
-            <select
-              name="serviceId"
-              value={formData.serviceId || ''}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Выберите услугу</option>
-              {services.map(service => (
-                <option key={service._id} value={service._id}>
-                  {service.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        {Object.entries(groupedFields).map(([groupName, fields]) => {
+          // Фильтруем поля с учетом видимости
+          const visibleFields = fields.filter(
+            (field) => !field.visibleIf || field.visibleIf(formData)
+          )
+          if (visibleFields.length === 0) return null
 
-          {renderCommonFields()}
-        </div>
+          return (
+            <Section key={groupName} title={groupName}>
+              {renderFields(visibleFields)}
+            </Section>
+          )
+        })}
 
         <div className="flex justify-end space-x-4">
           <button
@@ -491,9 +585,9 @@ export const DealForm = ({ initialData, services, stages, materials, companies }
           <button
             type="submit"
             disabled={loading}
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? 'Сохранение...' : 'Сохранить'}
+            {loading ? 'Сохраняем...' : 'Сохранить'}
           </button>
         </div>
       </form>
