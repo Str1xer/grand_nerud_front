@@ -24,6 +24,8 @@ export interface Deal {
   paymentMethod: string
   shippingAddressId: string | null
   deliveryAddressId: string | null
+  shippingAddress: string | null
+  deliveryAddress: string | null
   amountPurchase: number
   amountDelivery: number
   companyProfit: number
@@ -61,6 +63,7 @@ export interface Deal {
     name: string
     admin: boolean
   }
+  serviceIdName?: string;
 }
 
 export interface Material {
@@ -87,6 +90,7 @@ export interface Stage {
 export interface Company {
   _id: string;
   name: string;
+  abbreviatedName: string
   inn: number;
   contacts: Record<string, any>;
   deleted_at: string;
