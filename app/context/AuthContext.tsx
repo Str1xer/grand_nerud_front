@@ -3,14 +3,12 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 
-// Утилита для работы с куками
 const setCookie = (name: string, value: string) => {
   const domain = process.env.NODE_ENV === 'development'
     ? 'localhost'
     : '.worldautogroup.ru';
 
-  document.cookie = `${name}=${value}; path=/; domain=${domain}; ${process.env.NODE_ENV === 'production' ? 'Secure; SameSite=None' : 'SameSite=Lax'
-    }`;
+  document.cookie = `${name}=${value}; path=/; domain=${domain}; ${process.env.NODE_ENV === 'production' ? 'Secure; SameSite=None' : 'SameSite=Lax'}`
 }
 
 const getCookie = (name: string) => {
@@ -34,6 +32,7 @@ interface AuthContextType {
   loading: boolean
   isAdmin: boolean
   error: string | null
+  authChecked: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -44,81 +43,64 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     loading: boolean
     isAdmin: boolean
     error: string | null
+    authChecked: boolean
   }>({
     user: null,
     loading: true,
     isAdmin: false,
-    error: null
+    error: null,
+    authChecked: false
   })
 
   const router = useRouter()
 
   const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
-    const token = getCookie('tg_news_bot_access_token');
+    const token = getCookie('tg_news_bot_access_token')
 
     const headers = {
       'Content-Type': 'application/json',
-      // ...(token && { 'Authorization': `Bearer ${token}` }),
       ...(token && { 'x-user-id': token }),
       ...options.headers
-    };
-
-    try {
-      const response = await fetch(`https://appgrand.worldautogroup.ru${endpoint}`, {
-        ...options,
-        headers,
-        credentials: 'include',
-        mode: 'cors' // Явно указываем режим CORS
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.detail || `HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error(`Fetch error for ${endpoint}:`, error);
-      throw error instanceof Error ? error : new Error('Network request failed');
     }
-  };
 
-  // Добавьте этот метод для обработки OPTIONS-запросов
-  const handlePreflight = async (endpoint: string) => {
-    await fetch(`https://appgrand.worldautogroup.ru${endpoint}`, {
-      method: 'OPTIONS',
-      headers: {
-        'Access-Control-Request-Method': 'GET',
-        'Access-Control-Request-Headers': 'Content-Type,Authorization',
-        'Origin': window.location.origin
-      }
-    });
-  };
+    const response = await fetch(`https://appgrand.worldautogroup.ru${endpoint}`, {
+      ...options,
+      headers,
+      credentials: 'include',
+      mode: 'cors'
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null)
+      throw new Error(errorData?.detail || `HTTP error! status: ${response.status}`)
+    }
+
+    return await response.json()
+  }
 
   const checkAuth = async () => {
     try {
-      setState(prev => ({ ...prev, loading: true, error: null }));
+      setState(prev => ({ ...prev, loading: true, error: null }))
 
-      // Сначала обрабатываем preflight
-      await handlePreflight('/auth/me');
-
-      // Затем основной запрос
-      const userData = await fetchWithAuth('/auth/me');
+      const userData = await fetchWithAuth('/auth/me')
       setState({
         user: userData,
         isAdmin: userData?.admin === true,
         loading: false,
-        error: null
-      });
+        error: null,
+        authChecked: true
+      })
     } catch (error) {
+      // ⚠️ Ошибку сохраняем, но authChecked = true (значит проверка завершена)
       setState({
         user: null,
         isAdmin: false,
         loading: false,
-        error: error instanceof Error ? error.message : 'Auth check failed'
-      });
+        error: error instanceof Error ? error.message : 'Auth check failed',
+        authChecked: true
+      })
     }
-  };
+  }
 
   const login = async (email: string, password: string) => {
     try {
@@ -126,9 +108,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const response = await fetch('https://appgrand.worldautogroup.ru/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       })
 
@@ -138,14 +118,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const { access_token } = await response.json()
-
-      // Сохраняем токен в куки
       setCookie('tg_news_bot_access_token', access_token)
-
-      // Проверяем что кука установилась
-      if (!getCookie('tg_news_bot_access_token')) {
-        throw new Error('Failed to set auth cookie')
-      }
 
       await checkAuth()
       router.push('/deals')
@@ -168,7 +141,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user: null,
         isAdmin: false,
         loading: false,
-        error: null
+        error: null,
+        authChecked: true
       })
       router.push('/login')
     }
@@ -185,7 +159,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       logout,
       loading: state.loading,
       isAdmin: state.isAdmin,
-      error: state.error
+      error: state.error,
+      authChecked: state.authChecked
     }}>
       {children}
     </AuthContext.Provider>
