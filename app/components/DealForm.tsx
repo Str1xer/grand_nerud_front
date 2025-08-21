@@ -79,20 +79,40 @@ const allFieldsConfig: FieldConfig[] = [
     name: 'quantity',
     label: 'Количество',
     type: 'number',
-    step: '0.01',
-    min: 0,
+    step: '1',
+    min: 1,
     group: 'Основная информация',
     visibleIf: (formData) => !!formData.serviceId,
+  },
+  {
+    name: 'amountPerUnit',
+    label: 'Цена за единицу',
+    type: 'number',
+    step: '0.01',
+    min: 1,
+    group: 'Основная информация',
+    visibleIf: (formData) => !!(formData.serviceId && formData.serviceIdName === 'продажа сырья'),
+  },
+  {
+    name: 'amountPurchase',
+    label: 'Итоговая сумм закупки',
+    type: 'number',
+    step: '0.01',
+    min: 0,
+    readonly: true,
+    group: 'Основная информация',
+    visibleIf: (formData) => !!(formData.serviceId && formData.serviceIdName === 'продажа сырья'),
   },
 
   // Финансовая информация
   {
     name: 'paymentMethod',
     label: 'Тип расчета',
+    required: true,
     type: 'select',
     options: [
-      { label: 'Наличные', value: 'cash' },
-      { label: 'Безналичный', value: 'cashless' },
+      { label: 'Наличные', value: 'Наличные' },
+      { label: 'Безналичный', value: 'Безналичный' },
     ],
     group: 'Финансовая информация',
     visibleIf: (formData) => !!formData.serviceId,
@@ -103,6 +123,7 @@ const allFieldsConfig: FieldConfig[] = [
     type: 'number',
     step: '0.01',
     min: 0,
+    readonly: true,
     group: 'Финансовая информация',
     visibleIf: (formData) => !!formData.serviceId,
   },
@@ -112,6 +133,7 @@ const allFieldsConfig: FieldConfig[] = [
     type: 'number',
     step: '0.01',
     min: 0,
+    readonly: true,
     group: 'Финансовая информация',
     visibleIf: (formData) => !!formData.serviceId,
   },
@@ -130,8 +152,8 @@ const allFieldsConfig: FieldConfig[] = [
     label: 'Способ получения товара',
     type: 'select',
     options: [
-      { label: 'Доставка', value: 'delivery' },
-      { label: 'Самовывоз', value: 'pickup' },
+      { label: 'Доставка', value: 'Доставка' },
+      { label: 'Самовывоз', value: 'Самовывоз' },
     ],
     group: 'Доставка',
     visibleIf: (formData) => !!(formData.serviceId && formData.serviceIdName === 'продажа сырья'),
@@ -143,7 +165,7 @@ const allFieldsConfig: FieldConfig[] = [
     step: '0.01',
     min: 0,
     group: 'Доставка',
-    visibleIf: (formData) => formData.methodReceiving === 'delivery',
+    visibleIf: (formData) => formData.methodReceiving === 'Доставка',
   },
   {
     name: 'shippingAddress',
@@ -157,7 +179,7 @@ const allFieldsConfig: FieldConfig[] = [
     label: 'Адрес доставки',
     type: 'textarea',
     group: 'Доставка',
-    visibleIf: (formData) => formData.methodReceiving === 'delivery',
+    visibleIf: (formData) => formData.methodReceiving === 'Доставка',
   },
 
   // Дополнительно
@@ -174,26 +196,6 @@ const allFieldsConfig: FieldConfig[] = [
     type: 'textarea',
     group: 'Дополнительно',
     visibleIf: (formData) => !!formData.serviceId,
-  },
-
-  // Специфичные поля по услуге "продажа сырья"
-  {
-    name: 'amountPerUnit',
-    label: 'Цена за единицу',
-    type: 'number',
-    step: '0.01',
-    min: 0,
-    group: 'Дополнительно',
-    visibleIf: (formData) => !!(formData.serviceId && formData.serviceIdName === 'продажа сырья'),
-  },
-  {
-    name: 'amountPurchase',
-    label: 'Сумма закупки',
-    type: 'number',
-    step: '0.01',
-    min: 0,
-    group: 'Дополнительно',
-    visibleIf: (formData) => !!(formData.serviceId && formData.serviceIdName === 'продажа сырья'),
   },
 
   // Специфичные поля для утилизации
@@ -241,12 +243,13 @@ export const DealForm = ({
         stageId: '',
         materialId: '',
         unitMeasurement: '',
-        quantity: 0,
+        quantity: 1,
         methodReceiving: '',
         paymentMethod: '',
         shippingAddress: '',
         deliveryAddress: '',
         amountPurchase: 0,
+        amountPerUnit: 0,
         amountDelivery: 0,
         companyProfit: 0,
         totalAmount: 0,
@@ -486,24 +489,35 @@ export const DealForm = ({
   }
 
   const calculateTotal = () => {
-    const purchase = Number(formData.amountPurchase) || 0
+    const quantity1 = Number(formData.quantity) || 0
+    const amountPerUnit2 = Number(formData.amountPerUnit) || 0
     const delivery = Number(formData.amountDelivery) || 0
-    const profit = Number(formData.companyProfit) || 0
-    return purchase + delivery + profit
+    var purchase = (quantity1 * amountPerUnit2) // Number(formData.amountPurchase) || 0
+    var sum_without_profit = (purchase + delivery)
+    var profit_company = sum_without_profit * 0.2 // Number(formData.companyProfit) || 0
+    var total = sum_without_profit + profit_company
+    var profit_manager = profit_company * 0.5
+    return { total: total, profit: profit_company, profit_manager: profit_manager, purchase: purchase }
   }
 
   useEffect(() => {
     if (
+      formData.quantity !== undefined ||
+      formData.amountPerUnit !== undefined ||
       formData.amountPurchase !== undefined ||
       formData.amountDelivery !== undefined ||
       formData.companyProfit !== undefined
     ) {
+      const { total, profit, profit_manager, purchase } = calculateTotal()
       setFormData((prev) => ({
         ...prev,
-        totalAmount: calculateTotal(),
+        companyProfit: Number(profit.toFixed(2)),
+        totalAmount: total,
+        managerProfit: Number(profit_manager.toFixed(2)),
+        amountPurchase: purchase,
       }))
     }
-  }, [formData.amountPurchase, formData.amountDelivery, formData.companyProfit])
+  }, [formData.quantity, formData.amountPerUnit, formData.amountPurchase, formData.amountDelivery, formData.companyProfit])
 
   // Группируем поля по группе
   const groupedFields = allFieldsConfig.reduce<Record<string, FieldConfig[]>>((acc, field) => {
@@ -710,11 +724,23 @@ export const DealForm = ({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {field.label}
               </label>
+
               <input
-                type="number"
+                type="text"
                 {...commonProps}
-                onKeyDown={handleFloatKeyDown}
-                onPaste={handlePasteFloatOnly}
+                value={
+                  formData[field.name] !== undefined && formData[field.name] !== ''
+                    ? formData[field.name] + ' ₽'
+                    : ''
+                }
+                onChange={(e) => {
+                  // убираем все нечисловые символы
+                  const cleanValue = e.target.value.replace(/[^\d.,]/g, '').replace(',', '.')
+                  setFormData((prev) => ({
+                    ...prev,
+                    [field.name]: cleanValue ? parseFloat(cleanValue) : ''
+                  }))
+                }}
               />
             </div>
           )

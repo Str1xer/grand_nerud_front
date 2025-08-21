@@ -26,6 +26,7 @@ export interface Deal {
   deliveryAddressId: string | null
   shippingAddress: string | null
   deliveryAddress: string | null
+  amountPerUnit: number
   amountPurchase: number
   amountDelivery: number
   companyProfit: number
