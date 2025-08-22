@@ -35,7 +35,7 @@ export interface Deal {
   deadline: string | null
   notes: string
   OSSIG: boolean
-  updated_at: string | null
+  updated_at: string
   deleted_at: string | null
   is_deleted: boolean | null
   userId: string

@@ -729,8 +729,8 @@ export const DealForm = ({
                 type="text"
                 {...commonProps}
                 value={
-                  formData[field.name] !== undefined && formData[field.name] !== ''
-                    ? formData[field.name] + ' ₽'
+                  formData[field.name as keyof Deal] !== undefined && formData[field.name as keyof Deal] !== ''
+                    ? formData[field.name as keyof Deal] + ' ₽'
                     : ''
                 }
                 onChange={(e) => {
