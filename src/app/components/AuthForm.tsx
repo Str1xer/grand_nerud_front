@@ -1,52 +1,52 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/app/context/AuthContext'
-import Link from 'next/link'
+import useAuthContext from "@/contexts/auth-context";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
-export const AuthForm = ({ type }: { type: 'login' | 'register' }) => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
-  const { login, /* register, */ authChecked } = useAuth()
+export const AuthForm = ({ type }: { type: "login" | "register" }) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const { login, /* register, */ authChecked } = useAuthContext();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
     try {
-      if (type === 'login') {
-        await login(email, password)
+      if (type === "login") {
+        await login(email, password);
       } else {
         // если реализуешь регистрацию — добавить register()
       }
-      router.push('/deals')
+      router.push("/deals");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Произошла ошибка')
+      setError(err instanceof Error ? err.message : "Произошла ошибка");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-6 text-center">
-        {type === 'login' ? 'Вход' : 'Регистрация'}
+        {type === "login" ? "Вход" : "Регистрация"}
       </h2>
 
       {!authChecked && error && (
-        <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
-          {error}
-        </div>
+        <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">{error}</div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700"
+          >
             Email
           </label>
           <input
@@ -60,7 +60,10 @@ export const AuthForm = ({ type }: { type: 'login' | 'register' }) => {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium text-gray-700"
+          >
             Пароль
           </label>
           <input
@@ -79,7 +82,11 @@ export const AuthForm = ({ type }: { type: 'login' | 'register' }) => {
           disabled={loading}
           className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
         >
-          {loading ? 'Загрузка...' : type === 'login' ? 'Войти' : 'Зарегистрироваться'}
+          {loading
+            ? "Загрузка..."
+            : type === "login"
+            ? "Войти"
+            : "Зарегистрироваться"}
         </button>
       </form>
 
@@ -101,5 +108,5 @@ export const AuthForm = ({ type }: { type: 'login' | 'register' }) => {
         )}
       </div> */}
     </div>
-  )
-}
+  );
+};

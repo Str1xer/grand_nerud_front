@@ -1,24 +1,24 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { Deal } from '@/lib/types'
+import { DealDto } from "@definitions/dto";
+import Link from "next/link";
 
-export const DealCard = ({ deal }: { deal: Deal }) => {
+export const DealCard = ({ deal }: { deal: DealDto }) => {
   const getServiceName = (serviceId: string) => {
     // Здесь можно добавить логику для получения названия услуги по ID
     // Пока просто возвращаем ID
-    return serviceId
-  }
+    return serviceId;
+  };
 
   const getStageName = (stageId: string) => {
     // Здесь можно добавить логику для получения названия этапа по ID
     // Пока просто возвращаем ID
-    return stageId
-  }
+    return stageId;
+  };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString()
-  }
+    return new Date(dateString).toLocaleDateString();
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
@@ -27,26 +27,32 @@ export const DealCard = ({ deal }: { deal: Deal }) => {
           <h3 className="text-lg font-semibold text-gray-800">
             {getServiceName(deal.serviceId)}
           </h3>
-          <span className={`px-2 py-1 text-xs rounded-full ${
-            deal.is_deleted ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-          }`}>
-            {deal.is_deleted ? 'Удалена' : 'Активна'}
+          <span
+            className={`px-2 py-1 text-xs rounded-full ${
+              deal.is_deleted
+                ? "bg-red-100 text-red-800"
+                : "bg-green-100 text-green-800"
+            }`}
+          >
+            {deal.is_deleted ? "Удалена" : "Активна"}
           </span>
         </div>
-        
+
         <div className="text-sm text-gray-600 mb-3">
           <p>Создано: {formatDate(deal.createdAt)}</p>
           <p>Этап: {getStageName(deal.stageId)}</p>
           {deal.quantity && (
-            <p>Количество: {deal.quantity} {deal.unitMeasurement || 'ед.'}</p>
+            <p>
+              Количество: {deal.quantity} {deal.unitMeasurement || "ед."}
+            </p>
           )}
           {deal.totalAmount && (
             <p>Сумма: {deal.totalAmount.toLocaleString()} ₽</p>
           )}
         </div>
-        
+
         <div className="flex justify-between items-center">
-          <Link 
+          <Link
             href={`/deals/${deal._id}`}
             className="text-blue-600 hover:text-blue-800 text-sm font-medium"
           >
@@ -58,5 +64,5 @@ export const DealCard = ({ deal }: { deal: Deal }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};

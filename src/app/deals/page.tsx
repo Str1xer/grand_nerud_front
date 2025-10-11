@@ -1,243 +1,349 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { useAuth } from '@/app/context/AuthContext'
-import { Deal } from '@/lib/types'
+import { Page } from "@/components/blocks";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import useAuthContext from "@/contexts/auth-context";
+import { useDebounce } from "@/lib/debouncer";
+import { formatCurrency } from "@/lib/formatters";
+import { capitalizeFirstLetter } from "@/lib/typography";
+import { dealsService } from "@/services";
+import { DealDto } from "@definitions/dto";
+import { Handshake, MoreHorizontal } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function DealsPage() {
-  const { user, isAdmin } = useAuth()
-  const [deals, setDeals] = useState<Deal[]>([])
-  const [filteredDeals, setFilteredDeals] = useState<Deal[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const router = useRouter();
+  const { user } = useAuthContext();
+  const [deals, setDeals] = useState<DealDto[]>([]);
+  const [filteredDeals, setFilteredDeals] = useState<DealDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   // Фильтры
-  const [stageFilter, setStageFilter] = useState('')
-  const [serviceFilter, setServiceFilter] = useState('')
-  const [userFilter, setUserFilter] = useState('')
-
-  const getCookie = (name: string) => {
-    return document.cookie.split('; ').find(row => row.startsWith(`${name}=`))?.split('=')[1]
-  }
+  const [stageFilter, setStageFilter] = useState("all");
+  const [serviceFilter, setServiceFilter] = useState("all");
+  const [userFilter, setUserFilter] = useState("all");
 
   useEffect(() => {
-    if (!user) return
+    if (!user) return;
 
     const fetchDeals = async () => {
       try {
-        const token = getCookie('tg_news_bot_access_token');
-        const endpoint = isAdmin
-          ? 'https://appgrand.worldautogroup.ru/deals/admin/get'
-          : 'https://appgrand.worldautogroup.ru/deals'
-
-        const response = await fetch(endpoint, {
-          headers: {
-            ...(token && { 'x-user-id': token })
-          }
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch deals')
-        }
-
-        const data: Deal[] = await response.json()
+        const data: DealDto[] = user.admin
+          ? await dealsService.getDealsAdmin()
+          : await dealsService.getDeals();
 
         const sorted = data.sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
 
-        setDeals(sorted)
-        setFilteredDeals(sorted)
+        setDeals(sorted);
+        setFilteredDeals(sorted);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load deals')
+        setError(err instanceof Error ? err.message : "Failed to load deals");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchDeals()
-  }, [user, isAdmin])
+    fetchDeals();
+  }, [user]);
 
+  const appliedFilters = useDebounce(
+    { stage: stageFilter, service: serviceFilter, user: userFilter },
+    300
+  );
   useEffect(() => {
-    let filtered = [...deals]
+    let filtered = [...deals];
 
-    if (stageFilter) {
-      filtered = filtered.filter((d) => d.stage?.name === stageFilter)
+    if (appliedFilters.stage) {
+      filtered =
+        appliedFilters.stage === "all"
+          ? filtered
+          : filtered.filter((d) => d.stage?._id === appliedFilters.stage);
     }
-    if (serviceFilter) {
-      filtered = filtered.filter((d) => d.service?.name === serviceFilter)
+    if (appliedFilters.service) {
+      filtered =
+        appliedFilters.service === "all"
+          ? filtered
+          : filtered.filter((d) => d.service?._id === appliedFilters.service);
     }
-    if (userFilter) {
-      filtered = filtered.filter((d) => d.user?.name === userFilter)
+    if (appliedFilters.user) {
+      filtered =
+        appliedFilters.user === "all"
+          ? filtered
+          : filtered.filter((d) => d.user?._id === appliedFilters.user);
     }
 
-    setFilteredDeals(filtered)
-  }, [stageFilter, serviceFilter, userFilter, deals])
-
-  if (!user) {
-    return (
-      <div className="text-center py-10">
-        <p>Пожалуйста, войдите чтобы просмотреть сделки</p>
-        <Link href="/login" className="text-blue-600 hover:text-blue-800 mt-4 inline-block">
-          Войти
-        </Link>
-      </div>
-    )
-  }
-
-  if (loading) return <div className="text-center py-10">Загрузка сделок...</div>
-  if (error) return <div className="text-center py-10 text-red-500">{error}</div>
+    setFilteredDeals(filtered);
+  }, [appliedFilters, deals]);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">
-          {isAdmin ? 'Все сделки' : 'Мои сделки'}
-        </h1>
-        <Link
-          href="deals/new-deal"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-        >
-          Новая сделка
-        </Link>
-      </div>
-
-      {/* Фильтры в одну строку */}
-      <div className="flex flex-wrap gap-4 mb-6">
-        <div className="relative w-full max-w-xs">
-          <select
+    <Page
+      breadcrumbLinks={[
+        {
+          label: "Сделки",
+          href: "/deals",
+        },
+      ]}
+    >
+      <div className="inline-flex justify-between w-full">
+        <div className="inline-flex gap-4">
+          <Select
             value={stageFilter}
-            onChange={(e) => setStageFilter(e.target.value)}
-            className="block w-full appearance-none rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            onValueChange={(val) => setStageFilter(val)}
           >
-            <option value="">Все стадии</option>
-            {[...new Set(deals.map((d) => d.stage?.name).filter(Boolean))].map((stage) => (
-              <option key={stage} value={stage}>{stage}</option>
-            ))}
-          </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-            <svg
-              className="h-4 w-4 text-gray-400"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.02-1.06z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-        </div>
-
-        <div className="relative w-full max-w-xs">
-          <select
+            <SelectTrigger className="w-[180px] shadow-none">
+              <SelectValue placeholder="Выберите стадию" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Стадии</SelectLabel>
+                <SelectItem key="all" value="all">
+                  Все стадии
+                </SelectItem>
+                {deals
+                  .map((d) => ({
+                    title: d.stage?.name
+                      ? capitalizeFirstLetter(d.stage.name)
+                      : "Без названия",
+                    value: d.stage?._id,
+                  }))
+                  .reduce((acc: { value: string; title: string }[], cv) => {
+                    if (!acc.some((item) => item.value === cv.value)) {
+                      acc.push(cv);
+                    }
+                    return acc;
+                  }, [])
+                  .map((stage) =>
+                    stage.title ? (
+                      <SelectItem
+                        key={`stage-${stage.value}`}
+                        value={stage.value}
+                      >
+                        {stage.title}
+                      </SelectItem>
+                    ) : null
+                  )}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <Select
             value={serviceFilter}
-            onChange={(e) => setServiceFilter(e.target.value)}
-            className="block w-full appearance-none rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            onValueChange={(val) => setServiceFilter(val)}
           >
-            <option value="">Все услуги</option>
-            {[...new Set(deals.map((d) => d.service?.name).filter(Boolean))].map((service) => (
-              <option key={service} value={service}>{service}</option>
-            ))}
-          </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-            <svg
-              className="h-4 w-4 text-gray-400"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.02-1.06z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-        </div>
-
-        <div className="relative w-full max-w-xs">
-          <select
+            <SelectTrigger className="w-[180px] shadow-none">
+              <SelectValue placeholder="Выберите стадию" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Услуги</SelectLabel>
+                <SelectItem key="all" value="all">
+                  Все услуги
+                </SelectItem>
+                {deals
+                  .map((d) => ({
+                    title: d.service?.name
+                      ? capitalizeFirstLetter(d.service.name)
+                      : "Без названия",
+                    value: d.service?._id,
+                  }))
+                  .reduce((acc: { value: string; title: string }[], cv) => {
+                    if (!acc.some((item) => item.value === cv.value)) {
+                      acc.push(cv);
+                    }
+                    return acc;
+                  }, [])
+                  .map((service) =>
+                    service ? (
+                      <SelectItem
+                        key={`service-${service.value}`}
+                        value={service.value}
+                      >
+                        {service.title}
+                      </SelectItem>
+                    ) : null
+                  )}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <Select
             value={userFilter}
-            onChange={(e) => setUserFilter(e.target.value)}
-            className="block w-full appearance-none rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            onValueChange={(val) => setUserFilter(val)}
           >
-            <option value="">Все менеджеры</option>
-            {[...new Set(deals.map((d) => d.user?.name).filter(Boolean))].map((userName) => (
-              <option key={userName} value={userName}>{userName}</option>
-            ))}
-          </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-            <svg
-              className="h-4 w-4 text-gray-400"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.02-1.06z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
+            <SelectTrigger className="w-[180px] shadow-none">
+              <SelectValue placeholder="Выберите менеджера" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Менеджеры</SelectLabel>
+                <SelectItem key="all" value="all">
+                  Все менеджеры
+                </SelectItem>
+                {deals
+                  .map((d) => ({
+                    title: d.user?.name
+                      ? capitalizeFirstLetter(d.user.name)
+                      : "Без имени",
+                    value: d.user?._id,
+                  }))
+                  .reduce((acc: { value: string; title: string }[], cv) => {
+                    if (!acc.some((item) => item.value === cv.value)) {
+                      acc.push(cv);
+                    }
+                    return acc;
+                  }, [])
+                  .map((manager) =>
+                    manager.title ? (
+                      <SelectItem
+                        key={`manager-${manager.value}`}
+                        value={manager.value}
+                      >
+                        {manager.title}
+                      </SelectItem>
+                    ) : null
+                  )}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="inline-flex">
+          <Button
+            onClick={() => router.push("/deals/new-deal")}
+            variant="default"
+          >
+            Создать сделку
+          </Button>
         </div>
       </div>
-
-      {/* Таблица сделок */}
-      <div className="flex flex-col shadow-xl">
-        <div className="-m-1.5 overflow-x-auto">
-          <div className="p-1.5 min-w-full inline-block align-middle">
-            <div className="overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-neutral-700">
-                <thead className="bg-gray-100 text-left">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Дата создания</th>
-                    <th scope="col" className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Услуга</th>
-                    <th scope="col" className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Статус</th>
-                    <th scope="col" className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Менеджер</th>
-                    <th scope="col" className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Сумма</th>
-                    <th scope="col" className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Дедлайн</th>
-                    <th scope="col" className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Действие</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredDeals.map((deal) => (
-                    <tr key={deal._id} className="odd:bg-white even:bg-gray-100 hover:bg-gray-100 dark:odd:bg-neutral-800 dark:even:bg-neutral-700 dark:hover:bg-neutral-700">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-neutral-200">{new Date(deal.createdAt).toLocaleString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-neutral-200">{deal.service?.name || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-neutral-200">{deal.stage?.name || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-neutral-200">{deal.user?.name || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-neutral-200">{deal.totalAmount?.toFixed(2) || '0.00'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-neutral-200">{deal.deadline || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-neutral-200">
-                        {
-                          <Link href={`/deals/${deal._id}`}>
-                            <button type="button" style={{ cursor: "pointer" }} className="inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent text-blue-600 hover:text-blue-800 focus:outline-hidden focus:text-blue-800 disabled:opacity-50 disabled:pointer-events-none dark:text-blue-500 dark:hover:text-blue-400 dark:focus:text-blue-400">Просмотр</button>
-                          </Link>
-                        }
-                        <br></br>
-                        {
-                          <Link href={`/deals/${deal._id}/edit`}><button style={{ cursor: "pointer" }} type="button" className="inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent text-blue-600 hover:text-blue-800 focus:outline-hidden focus:text-blue-800 disabled:opacity-50 disabled:pointer-events-none dark:text-blue-500 dark:hover:text-blue-400 dark:focus:text-blue-400">Редактировать</button></Link>
-                        }
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {filteredDeals.length === 0 && (
-        <div className="text-center py-10 text-gray-500">
-          Нет сделок по текущим фильтрам
+      {loading && (
+        <div className="w-full flex-auto inline-flex items-center justify-center h-[70svh]">
+          <Spinner className="w-10 h-10 m-auto mt-1/2" />
         </div>
       )}
-    </div>
-  )
+      {!loading && (
+        <div className="overflow-hidden rounded-md border mt-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Дата создания</TableHead>
+                <TableHead>Услуга</TableHead>
+                <TableHead>Статус</TableHead>
+                <TableHead>Менеджер</TableHead>
+                <TableHead>Сумма</TableHead>
+                <TableHead>Дедлайн</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredDeals.length === 0 && (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={6}>
+                    <Empty>
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon">
+                          <Handshake />
+                        </EmptyMedia>
+                        <EmptyTitle>Нет данных</EmptyTitle>
+                        <EmptyDescription>
+                          Похоже, что у вас нет сделок с такими фильтрами
+                        </EmptyDescription>
+                      </EmptyHeader>
+                      <EmptyContent>
+                        <Button
+                          onClick={() => router.push("/deals/new-deal")}
+                          type="button"
+                          className="pointer-events-auto"
+                        >
+                          Создать сделку
+                        </Button>
+                      </EmptyContent>
+                    </Empty>
+                  </TableCell>
+                </TableRow>
+              )}
+              {filteredDeals.length > 0 &&
+                filteredDeals.map((deal) => (
+                  <TableRow key={deal._id}>
+                    <TableCell>
+                      {new Date(deal.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      {deal.service
+                        ? capitalizeFirstLetter(deal.service.name)
+                        : "Не указано"}
+                    </TableCell>
+                    <TableCell>
+                      {deal.stage
+                        ? capitalizeFirstLetter(deal.stage.name)
+                        : "Не указано"}
+                    </TableCell>
+                    <TableCell>{deal.user?.name}</TableCell>
+                    <TableCell>{formatCurrency(deal.totalAmount)}</TableCell>
+                    <TableCell>
+                      <div className="inline-flex w-full justify-between items-center">
+                        {deal.deadline
+                          ? new Date(deal.deadline).toLocaleDateString()
+                          : "Не указано"}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Действия</DropdownMenuLabel>
+                            <DropdownMenuItem
+                              onClick={() => router.push(`/deals/${deal._id}`)}
+                            >
+                              Подробнее
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>Редактировать</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </Page>
+  );
 }
