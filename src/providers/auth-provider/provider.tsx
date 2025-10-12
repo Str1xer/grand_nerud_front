@@ -21,6 +21,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const userData = await authService.getMe();
       setUser(userData);
+      if (pathname === "/login") {
+        router.push("/deals");
+      }
     } catch (error) {
       if (!pathname.startsWith("/login")) {
         router.push("/login");

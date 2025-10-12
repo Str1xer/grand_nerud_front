@@ -48,7 +48,7 @@ export default function AdditionalInformationSection({
                   <Button
                     variant="outline"
                     id="date-picker"
-                    className="w-32 justify-between font-normal"
+                    className="w-40 justify-between font-normal"
                   >
                     {formData.deliveryDate
                       ? formData.deliveryDate.toLocaleDateString()

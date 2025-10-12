@@ -11,12 +11,16 @@ export default interface CreateDealRequest {
 
   amountPerUnit: number;
   amountPurchase: number;
+  amountSale: number;
   amountDelivery: number;
   companyProfit: number;
   totalAmount: number;
   managerProfit: number;
 
+  shippingAddress: string;
+  deliveryAddress: string;
+  OSSIG: boolean;
+
   deadline: string | undefined; // ISO date string
   notes: string;
-  OSSIG: boolean;
 }

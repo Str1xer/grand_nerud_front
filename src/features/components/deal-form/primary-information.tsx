@@ -2,49 +2,67 @@
 
 import { CompanyCombobox } from "@/components/inputs/company-combobox";
 import {
-    Field,
-    FieldDescription,
-    FieldGroup,
-    FieldLabel,
-    FieldLegend,
-    FieldSet,
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupInput,
-    InputGroupText,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
 } from "@/components/ui/input-group";
 import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { capitalizeFirstLetter } from "@/lib/typography";
 import {
-    CompanyDto,
-    MaterialDto,
-    ServiceDto,
-    StageDto,
+  companiesService,
+  materialsService,
+  servicesService,
+  stagesService,
+} from "@/services";
+import {
+  CompanyDto,
+  MaterialDto,
+  ServiceDto,
+  StageDto,
 } from "@definitions/dto";
+import { useEffect, useState } from "react";
 
 export default function PrimaryInformationSection({
   formData,
-  services,
-  companies,
-  stages,
-  materials,
 }: {
   formData: any;
-  services: ServiceDto[];
-  companies: CompanyDto[];
-  stages: StageDto[];
-  materials: MaterialDto[];
 }) {
+  const [services, setServices] = useState<ServiceDto[]>([]);
+  const [companies, setCompanies] = useState<CompanyDto[]>([]);
+  const [stages, setStages] = useState<StageDto[]>([]);
+  const [materials, setMaterials] = useState<MaterialDto[]>([]);
+
+  useEffect(() => {
+    Promise.all([
+      servicesService.getServices(),
+      stagesService.getStages(),
+      materialsService.getMaterials(),
+      companiesService.getCompanies(),
+    ]).then(([servicesData, stagesData, materialsData, companiesData]) => {
+      setServices(servicesData);
+      setStages(stagesData);
+      setMaterials(materialsData);
+      setCompanies(companiesData);
+    });
+  }, []);
+
   return (
     <FieldSet>
       <FieldLegend>Основная информация</FieldLegend>
@@ -53,7 +71,9 @@ export default function PrimaryInformationSection({
       </FieldDescription>
       <FieldGroup>
         <Field>
-          <FieldLabel htmlFor="customer">Заказчик</FieldLabel>
+          <FieldLabel htmlFor="customer" className="gap-0.5">
+            Заказчик<span className="text-red-600">*</span>
+          </FieldLabel>
           <CompanyCombobox
             value={formData.companyId}
             onChange={formData.setCompanyId}
@@ -61,7 +81,10 @@ export default function PrimaryInformationSection({
           />
         </Field>
         <Field>
-          <FieldLabel htmlFor="service">Услуга</FieldLabel>
+          <FieldLabel htmlFor="service" className="gap-0.5">
+            Услуга
+            <span className="text-red-600">*</span>
+          </FieldLabel>
           <Select
             value={formData.serviceId}
             onValueChange={formData.setServiceId}
@@ -87,7 +110,9 @@ export default function PrimaryInformationSection({
         {!!formData.serviceId && !!formData.companyId && (
           <div className="grid grid-cols-2 gap-4">
             <Field>
-              <FieldLabel htmlFor="stage">Этап сделки</FieldLabel>
+              <FieldLabel htmlFor="stage" className="gap-0.5">
+                Этап сделки<span className="text-red-600">*</span>
+              </FieldLabel>
               <Select
                 name="stage"
                 value={formData.stageId}
@@ -108,7 +133,10 @@ export default function PrimaryInformationSection({
               </Select>
             </Field>
             <Field>
-              <FieldLabel htmlFor="material">Материал</FieldLabel>
+              <FieldLabel htmlFor="material" className="gap-0.5">
+                Материал
+                <span className="text-red-600">*</span>
+              </FieldLabel>
               <Select
                 name="material"
                 value={formData.materialId}
@@ -166,9 +194,13 @@ export default function PrimaryInformationSection({
                   name="quantity"
                   placeholder="Введите количество"
                   value={formData.quantity}
+                  min={1}
+                  step={1}
                   onChange={(e) => {
-                    const formatted = e.target.value.replace(/[^0-9]/g, "");
-                    formData.setQuantity(Number(formatted));
+                    const value = parseInt(e.target.value);
+                    if (!isNaN(value) && value >= 0) {
+                      formData.setQuantity(value);
+                    }
                   }}
                 />
               </Field>
@@ -184,8 +216,8 @@ export default function PrimaryInformationSection({
                     name="amountPerUnit"
                     value={formData.amountPerUnit}
                     onChange={(e) => {
-                      const formatted = e.target.value.replace(/[^0-9]/g, "");
-                      formData.setAmountPerUnit(Number(formatted));
+                      const formatted = e.target.value.replace(/[^0-9.]/g, "");
+                      formData.setAmountPerUnit(formatted);
                     }}
                     placeholder="0.00"
                   />
@@ -203,12 +235,9 @@ export default function PrimaryInformationSection({
                   </InputGroupAddon>
                   <InputGroupInput
                     name="purchaseTotal"
-                    value={formData.total.purchase}
+                    value={formData.total.amountPurchase}
+                    readOnly
                     disabled
-                    onChange={(e) => {
-                      const formatted = e.target.value.replace(/[^0-9]/g, "");
-                      formData.setAmountPerUnit(Number(formatted));
-                    }}
                     placeholder="0.00"
                   />
                 </InputGroup>
@@ -216,6 +245,28 @@ export default function PrimaryInformationSection({
             )}
           </div>
         )}
+        {formData.serviceId &&
+          formData.serviceId === "687a88dfb6b13b70b6a575f3" && (
+            <div className="grid grid-cols-3 gap-4">
+              <Field>
+                <FieldLabel htmlFor="purchaseTotal">Сумма продажи</FieldLabel>
+                <InputGroup>
+                  <InputGroupAddon>
+                    <InputGroupText>₽</InputGroupText>
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    name="amountSale"
+                    value={formData.amountSale}
+                    onChange={(e) => {
+                      const formatted = e.target.value.replace(/[^0-9.]/g, "");
+                      formData.setAmountSale(formatted);
+                    }}
+                    placeholder="0.00"
+                  />
+                </InputGroup>
+              </Field>
+            </div>
+          )}
       </FieldGroup>
     </FieldSet>
   );

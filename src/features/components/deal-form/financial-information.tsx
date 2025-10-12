@@ -1,26 +1,26 @@
 "use client";
 
 import {
-    Field,
-    FieldDescription,
-    FieldGroup,
-    FieldLabel,
-    FieldLegend,
-    FieldSet,
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
 } from "@/components/ui/field";
 import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupInput,
-    InputGroupText,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
 } from "@/components/ui/input-group";
 import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 
 export default function FinancialInformationSection({
@@ -90,28 +90,7 @@ export default function FinancialInformationSection({
                 name="managerProfit"
                 value={formData.total.managerProfit}
                 disabled
-                onChange={(e) => {
-                  const formatted = e.target.value.replace(/[^0-9]/g, "");
-                  formData.setAmountPerUnit(Number(formatted));
-                }}
-                placeholder="0.00"
-              />
-            </InputGroup>
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="total">Итоговая сумма</FieldLabel>
-            <InputGroup>
-              <InputGroupAddon>
-                <InputGroupText>₽</InputGroupText>
-              </InputGroupAddon>
-              <InputGroupInput
-                name="total"
-                value={formData.total.total}
-                disabled
-                onChange={(e) => {
-                  const formatted = e.target.value.replace(/[^0-9]/g, "");
-                  formData.setAmountPerUnit(Number(formatted));
-                }}
+                readOnly
                 placeholder="0.00"
               />
             </InputGroup>

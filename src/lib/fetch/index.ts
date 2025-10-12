@@ -64,7 +64,7 @@ export async function securePostData(
 
   const token = getCookie("tg_news_bot_access_token");
 
-  return fetch(url, {
+  const response = await fetch(url, {
     ...options,
     method: "POST",
     body: JSON.stringify(data),
@@ -75,4 +75,6 @@ export async function securePostData(
     },
     credentials: "include",
   });
+
+  return response.json();
 }

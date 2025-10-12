@@ -1,4 +1,3 @@
-// /src/app/deals/[id]/page.tsx
 "use client";
 
 import { Page } from "@/components/blocks";
@@ -109,17 +108,25 @@ export default function DealDetailPage() {
           </TableRow>
           <TableRow>
             <TableCell className="font-medium w-1/3">Тип услуги</TableCell>
-            <TableCell>{capitalizeFirstLetter(deal.service.name)}</TableCell>
+            <TableCell>
+              {deal.service
+                ? capitalizeFirstLetter(deal.service.name)
+                : "Не указано"}
+            </TableCell>
           </TableRow>
           <TableRow>
             <TableCell className="font-medium w-1/3">Статус</TableCell>
-            <TableCell>{capitalizeFirstLetter(deal.stage.name)}</TableCell>
+            <TableCell>
+              {deal.stage
+                ? capitalizeFirstLetter(deal.stage.name)
+                : "Не указано"}
+            </TableCell>
           </TableRow>
           <TableRow>
             <TableCell className="font-medium w-1/3">Менеджер</TableCell>
             <TableCell>
-              {capitalizeFirstLetter(deal.user.name || "Не указано")}{" "}
-              {deal.user.email}
+              {capitalizeFirstLetter(deal.user?.name || "Не указано")}{" "}
+              {deal.user?.email}
             </TableCell>
           </TableRow>
           <TableRow>
@@ -200,7 +207,7 @@ export default function DealDetailPage() {
           </TableRow>
         </TableBody>
       </Table>
-      <div className="inline-flex gap-4 mt-6">
+      <div className="inline-flex gap-2.5 mt-6">
         <Button variant="destructive" onClick={() => window.history.back()}>
           Удалить
         </Button>

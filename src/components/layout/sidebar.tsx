@@ -1,6 +1,9 @@
+"use client";
+
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -10,7 +13,10 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { Handshake, House } from "lucide-react";
+import { usePathname } from "next/navigation";
 import * as React from "react";
+import { NavUser } from "./footer";
 import { Header } from "./header";
 
 // This is sample data.
@@ -30,10 +36,22 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname();
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
         <Header />
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={pathname === "/"}>
+              <a href="/">
+                <House />
+                <span>Главная</span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         {data.navMain.map((item) => (
@@ -43,8 +61,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenu>
                 {item.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={false}>
-                      <a href={item.url}>{item.title}</a>
+                    <SidebarMenuButton asChild isActive={pathname === item.url}>
+                      <a href={item.url}>
+                        <Handshake />
+                        {item.title}
+                      </a>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -53,6 +74,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroup>
         ))}
       </SidebarContent>
+      <SidebarFooter>
+        <NavUser />
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
