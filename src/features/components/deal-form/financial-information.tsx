@@ -22,13 +22,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DealDataFormHook } from "./data-form-hook";
 
 export default function FinancialInformationSection({
   formData,
 }: {
-  formData: any;
+  formData: DealDataFormHook;
 }) {
-  if (!formData.serviceId || !formData.companyId) {
+  if (!formData.serviceId || !formData.customerId) {
     return null;
   }
 
@@ -61,7 +62,7 @@ export default function FinancialInformationSection({
             </SelectContent>
           </Select>
         </Field>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:gap-4">
           <Field>
             <FieldLabel htmlFor="profit">Надбавка фирмы</FieldLabel>
             <InputGroup>
@@ -70,12 +71,9 @@ export default function FinancialInformationSection({
               </InputGroupAddon>
               <InputGroupInput
                 name="profit"
-                value={formData.total.companyProfit}
+                value={formData.calculatedData.companyProfit}
                 disabled
-                onChange={(e) => {
-                  const formatted = e.target.value.replace(/[^0-9]/g, "");
-                  formData.setAmountPerUnit(Number(formatted));
-                }}
+                readOnly
                 placeholder="0.00"
               />
             </InputGroup>
@@ -88,7 +86,7 @@ export default function FinancialInformationSection({
               </InputGroupAddon>
               <InputGroupInput
                 name="managerProfit"
-                value={formData.total.managerProfit}
+                value={formData.calculatedData.managerProfit}
                 disabled
                 readOnly
                 placeholder="0.00"

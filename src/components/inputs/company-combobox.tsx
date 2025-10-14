@@ -17,10 +17,12 @@ import { Input } from "../ui/input";
 export function CompanyCombobox({
   companies,
   value = "",
+  disabled = false,
   onChange = () => {},
 }: {
   companies: CompanyDto[];
   value?: string;
+  disabled?: boolean;
   onChange?: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -39,6 +41,7 @@ export function CompanyCombobox({
   return (
     <>
       <Input
+        disabled={disabled}
         readOnly
         value={companies.find((el) => el._id === value)?.name || ""}
         placeholder="Выберите компанию"

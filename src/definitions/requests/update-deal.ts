@@ -1,6 +1,4 @@
-export default interface CreateDealRequest {
-  serviceId: string;
-  customerId: string;
+export default interface UpdateDealRequest {
   stageId: string;
   materialId: string;
 

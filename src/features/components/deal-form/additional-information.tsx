@@ -20,15 +20,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { ChevronDownIcon } from "lucide-react";
 import { useState } from "react";
 import { ru } from "react-day-picker/locale";
+import { DealDataFormHook } from "./data-form-hook";
 
 export default function AdditionalInformationSection({
   formData,
 }: {
-  formData: any;
+  formData: DealDataFormHook;
 }) {
   const [open, setOpen] = useState(false);
 
-  if (!formData.serviceId || !formData.companyId) {
+  if (!formData.serviceId || !formData.customerId) {
     return null;
   }
 

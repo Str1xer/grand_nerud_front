@@ -25,13 +25,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { DealDataFormHook, ReceivingMethod } from "./data-form-hook";
 
 export default function DeliveryInformationSection({
   formData,
 }: {
-  formData: any;
+  formData: DealDataFormHook;
 }) {
-  if (!formData.serviceId || !formData.companyId) {
+  if (!formData.serviceId || !formData.customerId) {
     return null;
   }
 
@@ -43,24 +44,24 @@ export default function DeliveryInformationSection({
         {formData.serviceId === "687a88e6b6b13b70b6a575f4" && (
           <div className="flex items-center space-x-2">
             <Switch
-              checked={formData.deliveryOssig}
-              onClick={() => formData.setDeliveryOssig(!formData.deliveryOssig)}
+              checked={formData.ossig}
+              onClick={() => formData.setOssig(!formData.ossig)}
               name="ossig"
             />
             <Label htmlFor="ossig">ОССиГ</Label>
           </div>
         )}
         {formData.serviceId === "687a88dfb6b13b70b6a575f3" && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-4">
             <Field>
               <FieldLabel htmlFor="receivingMethod">
                 Способ получения товара
               </FieldLabel>
               <Select
                 name="receivingMethod"
-                value={formData.receivingMethod}
+                value={formData.methodReceiving}
                 onValueChange={(e) =>
-                  formData.setReceivingMethod(e as "самовывоз" | "доставка")
+                  formData.setMethodReceiving(e as ReceivingMethod)
                 }
               >
                 <SelectTrigger className="w-[180px]">
@@ -74,7 +75,7 @@ export default function DeliveryInformationSection({
                 </SelectContent>
               </Select>
             </Field>
-            {formData.receivingMethod === "доставка" && (
+            {formData.methodReceiving === "доставка" && (
               <Field>
                 <FieldLabel htmlFor="amountDelivery">
                   Стоимость доставки
@@ -107,7 +108,7 @@ export default function DeliveryInformationSection({
             placeholder="Введите адрес отгрузки"
           />
         </Field>
-        {formData.receivingMethod === "доставка" && (
+        {formData.methodReceiving === "доставка" && (
           <Field>
             <FieldLabel htmlFor="shippingAddress">Адрес доставки</FieldLabel>
             <Input

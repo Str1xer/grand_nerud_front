@@ -9,32 +9,31 @@ export default interface DealDto {
   stageId: string;
   materialId: string | null;
 
+  unitMeasurement: string;
+
   quantity: number;
-  amountPerUnit: number;
-  amountPurchase: number;
-  amountSale: number;
+
+  amountPurchaseUnit: number;
+  amountPurchaseTotal: number;
+
+  amountSalesUnit: number;
+  amountSalesTotal: number;
 
   amountDelivery: number;
   companyProfit: number;
-  managerProfit: number;
+
   totalAmount: number;
+  managerProfit: number;
 
   paymentMethod: string;
 
-  shippingAddressId: string | null;
-  deliveryAddressId: string | null;
+  shippingAddress: string | null;
   methodReceiving: string;
+  deliveryAddress: string | null;
 
   deadline: string | null;
   notes: string;
   OSSIG: boolean;
-
-  unitMeasurement: string;
-  shippingAddress: string | null;
-  deliveryAddress: string | null;
-  shipping_address: null | any;
-  delivery_address: null | any;
-  serviceIdName?: string;
 
   // Populated fields
   user: UserDto | null;

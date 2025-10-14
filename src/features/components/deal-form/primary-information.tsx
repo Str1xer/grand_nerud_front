@@ -33,16 +33,20 @@ import {
 } from "@/services";
 import {
   CompanyDto,
+  DealDto,
   MaterialDto,
   ServiceDto,
   StageDto,
 } from "@definitions/dto";
 import { useEffect, useState } from "react";
+import { DealDataFormHook, MeasurementUnit } from "./data-form-hook";
 
 export default function PrimaryInformationSection({
   formData,
+  defaultDeal,
 }: {
-  formData: any;
+  formData: DealDataFormHook;
+  defaultDeal?: DealDto;
 }) {
   const [services, setServices] = useState<ServiceDto[]>([]);
   const [companies, setCompanies] = useState<CompanyDto[]>([]);
@@ -75,8 +79,9 @@ export default function PrimaryInformationSection({
             Заказчик<span className="text-red-600">*</span>
           </FieldLabel>
           <CompanyCombobox
-            value={formData.companyId}
-            onChange={formData.setCompanyId}
+            disabled={!!defaultDeal}
+            value={formData.customerId}
+            onChange={formData.setCustomerId}
             companies={companies || []}
           />
         </Field>
@@ -89,6 +94,7 @@ export default function PrimaryInformationSection({
             value={formData.serviceId}
             onValueChange={formData.setServiceId}
             name="service"
+            disabled={!!defaultDeal}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Выберите услугу" />
@@ -107,8 +113,8 @@ export default function PrimaryInformationSection({
             </SelectContent>
           </Select>
         </Field>
-        {!!formData.serviceId && !!formData.companyId && (
-          <div className="grid grid-cols-2 gap-4">
+        {!!formData.serviceId && !!formData.customerId && (
+          <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-4">
             <Field>
               <FieldLabel htmlFor="stage" className="gap-0.5">
                 Этап сделки<span className="text-red-600">*</span>
@@ -161,8 +167,8 @@ export default function PrimaryInformationSection({
             </Field>
           </div>
         )}
-        {!!formData.serviceId && !!formData.companyId && (
-          <div className="grid grid-cols-3 gap-4">
+        {!!formData.serviceId && !!formData.customerId && (
+          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:gap-4">
             <div className="grid grid-cols-2 gap-2.5">
               <Field>
                 <FieldLabel htmlFor="measurementUnit">
@@ -170,9 +176,9 @@ export default function PrimaryInformationSection({
                 </FieldLabel>
                 <Select
                   name="measurementUnit"
-                  value={formData.measurementUnit}
+                  value={formData.unitMeasurement}
                   onValueChange={(e) =>
-                    formData.setMeasurementUnit(e as "тонна" | "куб.м" | "шт")
+                    formData.setUnitMeasurement(e as MeasurementUnit)
                   }
                 >
                   <SelectTrigger className="w-[180px]">
@@ -214,10 +220,10 @@ export default function PrimaryInformationSection({
                   </InputGroupAddon>
                   <InputGroupInput
                     name="amountPerUnit"
-                    value={formData.amountPerUnit}
+                    value={formData.amountPurchaseUnit}
                     onChange={(e) => {
                       const formatted = e.target.value.replace(/[^0-9.]/g, "");
-                      formData.setAmountPerUnit(formatted);
+                      formData.setAmountPurchaseUnit(formatted);
                     }}
                     placeholder="0.00"
                   />
@@ -235,7 +241,7 @@ export default function PrimaryInformationSection({
                   </InputGroupAddon>
                   <InputGroupInput
                     name="purchaseTotal"
-                    value={formData.total.amountPurchase}
+                    value={formData.calculatedData.amountPurchaseTotal}
                     readOnly
                     disabled
                     placeholder="0.00"
@@ -247,7 +253,7 @@ export default function PrimaryInformationSection({
         )}
         {formData.serviceId &&
           formData.serviceId === "687a88dfb6b13b70b6a575f3" && (
-            <div className="grid grid-cols-3 gap-4">
+            <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:gap-4">
               <Field>
                 <FieldLabel htmlFor="purchaseTotal">Сумма продажи</FieldLabel>
                 <InputGroup>
@@ -256,11 +262,28 @@ export default function PrimaryInformationSection({
                   </InputGroupAddon>
                   <InputGroupInput
                     name="amountSale"
-                    value={formData.amountSale}
+                    value={formData.amountSalesUnit}
                     onChange={(e) => {
                       const formatted = e.target.value.replace(/[^0-9.]/g, "");
-                      formData.setAmountSale(formatted);
+                      formData.setAmountSalesUnit(formatted);
                     }}
+                    placeholder="0.00"
+                  />
+                </InputGroup>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="purchaseTotal">
+                  Итоговая сумма продажи
+                </FieldLabel>
+                <InputGroup>
+                  <InputGroupAddon>
+                    <InputGroupText>₽</InputGroupText>
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    name="purchaseTotal"
+                    value={formData.calculatedData.amountSalesTotal}
+                    readOnly
+                    disabled
                     placeholder="0.00"
                   />
                 </InputGroup>

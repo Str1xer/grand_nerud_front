@@ -1,6 +1,15 @@
 "use client";
 
 import { Page } from "@/components/blocks";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -12,64 +21,40 @@ import {
 import useAuthContext from "@/contexts/auth-context";
 import { formatCurrency } from "@/lib/formatters";
 import { capitalizeFirstLetter } from "@/lib/typography";
+import { dealsService } from "@/services";
 import { DealDto } from "@definitions/dto";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function DealDetailPage() {
+  const router = useRouter();
   const { id } = useParams();
   const { user } = useAuthContext();
   const [deal, setDeal] = useState<DealDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const getCookie = (name: string) => {
-    return document.cookie
-      .split("; ")
-      .find((row) => row.startsWith(`${name}=`))
-      ?.split("=")[1];
+  const handleDelete = async () => {
+    if (!deal) return;
+    await dealsService.deleteDeal(deal._id);
+    router.replace("/deals");
   };
 
   useEffect(() => {
     if (!user) return;
 
-    const fetchDeal = async () => {
-      try {
-        const token = getCookie("tg_news_bot_access_token");
-
-        const response = await fetch(
-          `https://appgrand.worldautogroup.ru/deals/${id}`,
-          {
-            headers: {
-              ...(token && { "x-user-id": token }),
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch deal");
-        }
-
-        const dealData = await response.json();
-        setDeal(dealData);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load deal");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDeal();
+    setLoading(true);
+    dealsService
+      .getDeal(id as string)
+      .then((res) => {
+        setDeal(res);
+      })
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : "Failed to load deal")
+      )
+      .then(() => setLoading(false));
   }, [id, user]);
-
-  if (!user) {
-    return (
-      <div className="text-center py-10">
-        <p>Пожалуйста, войдите чтобы просмотреть сделку</p>
-      </div>
-    );
-  }
 
   if (loading) {
     return <div className="text-center py-10">Загрузка данных сделки...</div>;
@@ -149,17 +134,21 @@ export default function DealDetailPage() {
           </TableRow>
           <TableRow>
             <TableCell className="font-medium w-1/3">Сумма закупки</TableCell>
-            <TableCell>{formatCurrency(deal.amountPurchase)}</TableCell>
+            <TableCell>{formatCurrency(deal.amountPurchaseTotal)}</TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="font-medium w-1/3">Доставка</TableCell>
-            <TableCell>{formatCurrency(deal.amountDelivery)}</TableCell>
+            <TableCell className="font-medium w-1/3">Сумма продажи</TableCell>
+            <TableCell>{formatCurrency(deal.amountSalesTotal)}</TableCell>
           </TableRow>
           <TableRow>
             <TableCell className="font-medium w-1/3">
               Прибыль компании
             </TableCell>
             <TableCell>{formatCurrency(deal.companyProfit)}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium w-1/3">Доставка</TableCell>
+            <TableCell>{formatCurrency(deal.amountDelivery)}</TableCell>
           </TableRow>
         </TableBody>
         <TableFooter>
@@ -208,12 +197,31 @@ export default function DealDetailPage() {
         </TableBody>
       </Table>
       <div className="inline-flex gap-2.5 mt-6">
-        <Button variant="destructive" onClick={() => window.history.back()}>
+        <AlertDialog open={deleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Вы точно хотите удалить сделку?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Сделка #{deal._id} будет удалена навсегда. Вы уверены в своем
+                решении?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setDeleteOpen(false)}>
+                Отменить
+              </AlertDialogCancel>
+              <Button variant="destructive" onClick={handleDelete}>
+                Удалить
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
           Удалить
         </Button>
-        <Button
-          onClick={() => alert("Редактирование сделки пока не реализовано")}
-        >
+        <Button onClick={() => router.push(`/deals/${deal._id}/edit`)}>
           Редактировать
         </Button>
       </div>
