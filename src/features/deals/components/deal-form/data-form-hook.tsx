@@ -214,7 +214,7 @@ export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
           .padStart(2, "0")}-${deliveryDate
           ?.getDate()
           .toString()
-          .padStart(2, "0")}T${deliveryTime}`, // TODO: add deadline input
+          .padStart(2, "0")}${deliveryTime}`, // TODO: add deadline input
         notes: notes,
         OSSIG: ossig,
       };

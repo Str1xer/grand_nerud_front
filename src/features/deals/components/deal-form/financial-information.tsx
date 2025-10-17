@@ -64,7 +64,7 @@ export default function FinancialInformationSection({
         </Field>
         <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:gap-4">
           <Field>
-            <FieldLabel htmlFor="profit">Надбавка фирмы</FieldLabel>
+            <FieldLabel htmlFor="profit">Маржа фирмы</FieldLabel>
             <InputGroup>
               <InputGroupAddon>
                 <InputGroupText>₽</InputGroupText>
