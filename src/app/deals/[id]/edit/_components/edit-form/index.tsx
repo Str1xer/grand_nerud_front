@@ -2,7 +2,7 @@
 
 import { dealsService } from "@/services";
 import { DealDto } from "@definitions/dto";
-import DealForm from "@features/components/deal-form/deal-form";
+import DealForm from "@features/deals/components/deal-form/deal-form";
 import { useEffect, useState } from "react";
 
 export default function EditDealForm({ dealId }: { dealId: string }) {

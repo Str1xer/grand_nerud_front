@@ -5,7 +5,7 @@ import { removeCookie, setCookie } from "@/lib/cookies";
 import { authService } from "@/services";
 import { UserDto } from "@definitions/dto";
 import { usePathname, useRouter } from "next/navigation";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useCallback, useEffect, useState } from "react";
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
@@ -13,9 +13,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [authChecked, setAuthChecked] = useState(false);
 
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     setError(null);
     setLoading(true);
     try {
@@ -32,13 +31,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setError(error instanceof Error ? error.message : "Auth check failed");
     } finally {
       setLoading(false);
-      setAuthChecked(true);
     }
-  };
+  }, [router, pathname, setError, setLoading, setUser]);
 
   const login = async (email: string, password: string) => {
     try {
-      setLoading(true);
       setError(null);
 
       const response = await fetch(
@@ -79,7 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, [checkAuth]);
 
   return (
     <AuthContext.Provider
@@ -89,7 +86,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         logout,
         loading,
         error,
-        authChecked,
       }}
     >
       {children}

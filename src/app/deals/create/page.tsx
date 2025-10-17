@@ -1,5 +1,5 @@
 import { Page } from "@/components/blocks";
-import DealForm from "@features/components/deal-form/deal-form";
+import DealForm from "@features/deals/components/deal-form/deal-form";
 
 export default function NewDealPage() {
   return (

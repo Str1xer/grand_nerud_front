@@ -5,7 +5,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { GalleryVerticalEnd } from "lucide-react";
 import Link from "next/link";
 
 export function Header() {

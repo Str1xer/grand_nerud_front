@@ -25,14 +25,19 @@ export default function MaterialFilter({
   );
 
   useEffect(() => {
-    materialsService.getMaterials().then((materials) =>
-      setOptions(
-        materials.map((mat) => ({
-          label: mat.name,
-          value: mat._id,
-        }))
+    materialsService
+      .getMaterials()
+      .then((materials) =>
+        setOptions(
+          materials.map((mat) => ({
+            label: mat.name,
+            value: mat._id,
+          }))
+        )
       )
-    );
+      .catch((err) =>
+        console.log(err instanceof Error ? err.message : "Failed to load deals")
+      );
   }, []);
 
   return (

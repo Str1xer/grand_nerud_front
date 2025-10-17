@@ -2,7 +2,7 @@
 
 import useAuthContext from "@/contexts/auth-context";
 import { DealDto, UserDto } from "@definitions/dto";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function AdminPage() {
   const { user } = useAuthContext();
@@ -121,7 +121,7 @@ export default function AdminPage() {
           <div className="bg-green-50 p-4 rounded-lg">
             <p className="text-sm text-green-800">Активные сделки</p>
             <p className="text-2xl font-bold">
-              {allDeals.filter((d) => !d.is_deleted).length}
+              {allDeals.filter((d) => !!d.deletedAt).length}
             </p>
           </div>
           <div className="bg-purple-50 p-4 rounded-lg">

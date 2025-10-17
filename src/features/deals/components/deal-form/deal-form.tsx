@@ -36,7 +36,7 @@ export default function DealForm({ defaultDeal }: { defaultDeal?: DealDto }) {
                 !formData.serviceId
               }
             >
-              Создать сделку
+              {defaultDeal ? "Обновить сделку" : "Создать сделку"}
             </Button>
           </div>
         </div>

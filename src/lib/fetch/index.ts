@@ -59,6 +59,7 @@ export async function secureGetData(url: string, options: RequestInit = {}) {
 
 export async function securePostData(
   url: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any,
   options: RequestInit = {}
 ) {
@@ -89,6 +90,7 @@ export async function securePostData(
 
 export async function securePatchData(
   url: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any,
   options: RequestInit = {}
 ) {

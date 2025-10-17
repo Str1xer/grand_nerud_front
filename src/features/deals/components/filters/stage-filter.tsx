@@ -25,14 +25,19 @@ export default function StageFilter({
   );
 
   useEffect(() => {
-    stagesService.getStages().then((stages) =>
-      setOptions(
-        stages.map((stage) => ({
-          label: stage.name,
-          value: stage._id,
-        }))
+    stagesService
+      .getStages()
+      .then((stages) =>
+        setOptions(
+          stages.map((stage) => ({
+            label: stage.name,
+            value: stage._id,
+          }))
+        )
       )
-    );
+      .catch((err) =>
+        console.log(err instanceof Error ? err.message : "Failed to load deals")
+      );
   }, []);
 
   return (

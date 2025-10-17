@@ -43,7 +43,6 @@ export default interface DealDto {
   material: MaterialDto | null;
 
   createdAt: string;
-  updated_at: string;
-  deleted_at: string | null;
-  is_deleted: boolean | null;
+  updatedAt: string;
+  deletedAt: string | null;
 }

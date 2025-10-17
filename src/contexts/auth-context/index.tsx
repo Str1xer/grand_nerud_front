@@ -9,7 +9,6 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   loading: boolean;
   error: string | null;
-  authChecked: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -18,7 +17,6 @@ export const AuthContext = createContext<AuthContextType>({
   logout: async () => {},
   loading: false,
   error: null,
-  authChecked: false,
 });
 
 const useAuthContext = () => useContext(AuthContext);

@@ -40,52 +40,56 @@ export function LoginForm() {
 
   return (
     <form className={cn("flex flex-col gap-6")} onSubmit={handleSubmit}>
-      <FieldGroup>
+      <FieldGroup className="items-center">
         <div className="flex flex-col items-center gap-1 text-center">
-          <h1 className="text-2xl font-bold">Login to your account</h1>
+          <h1 className="text-2xl font-bold">Войдите в свою учетную запись</h1>
           <p className="text-muted-foreground text-sm text-balance">
-            Enter your email below to login to your account
+            Введите свой адрес электронной почты ниже, чтобы войти в свою
+            учетную запись
           </p>
         </div>
-        <Field>
-          <FieldLabel htmlFor="email">Email</FieldLabel>
+        <Field className="max-w-sm">
+          <FieldLabel htmlFor="email">Электронная почта</FieldLabel>
           <Input
             id="email"
             type="email"
             placeholder="m@example.com"
+            status={!!error ? "error" : "default"}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
         </Field>
-        <Field>
+        <Field className="max-w-sm">
           <div className="flex items-center">
-            <FieldLabel htmlFor="password">Password</FieldLabel>
+            <FieldLabel htmlFor="password">Пароль</FieldLabel>
             <a
               href="#"
               className="ml-auto text-sm underline-offset-4 hover:underline"
             >
-              Forgot your password?
+              Забыли пароль?
             </a>
           </div>
           <Input
             id="password"
             type="password"
+            status={!!error ? "error" : "default"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
+          {!!error && <p className="text-xs text-red-500">{error}</p>}
         </Field>
-        <Field>
+        <Field className="max-w-sm">
           <Button type="submit" disabled={isLoading}>
-            Login
+            Войти
           </Button>
         </Field>
         <Field>
           <FieldDescription className="text-center">
-            Don&apos;t have an account?{" "}
+            У вас нет учетной записи?{" "}
             <a href="#" className="underline underline-offset-4">
-              Sign up
+              Зарегистрируйтесь
             </a>
           </FieldDescription>
         </Field>

@@ -25,14 +25,19 @@ export default function ServiceFilter({
   );
 
   useEffect(() => {
-    servicesService.getServices().then((services) =>
-      setOptions(
-        services.map((serv) => ({
-          label: serv.name,
-          value: serv._id,
-        }))
+    servicesService
+      .getServices()
+      .then((services) =>
+        setOptions(
+          services.map((serv) => ({
+            label: serv.name,
+            value: serv._id,
+          }))
+        )
       )
-    );
+      .catch((err) =>
+        console.log(err instanceof Error ? err.message : "Failed to load deals")
+      );
   }, []);
 
   return (

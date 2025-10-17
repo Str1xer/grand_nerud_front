@@ -142,7 +142,7 @@ export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
       : undefined
   );
   const [deliveryTime, setDeliveryTime] = useState<string>(
-    defaultDeal?.deadline ? defaultDeal.deadline.split("T")[1] : ""
+    defaultDeal?.deadline ? defaultDeal.deadline.split(" ")[1] : ""
   );
 
   const [notes, setNotes] = useState<string>(defaultDeal?.notes || "");
@@ -253,6 +253,10 @@ export function useDataFormHook(defaultDeal?: DealDto): DealDataFormHook {
         (defaultDeal.methodReceiving as ReceivingMethod) || "самовывоз"
       );
       setNotes(defaultDeal.notes || "");
+      setDeliveryDate(new Date(defaultDeal.deadline || ""));
+      setDeliveryTime(
+        defaultDeal.deadline ? defaultDeal.deadline.split(" ")[1] : ""
+      );
       return;
     }
     setStageId("");
